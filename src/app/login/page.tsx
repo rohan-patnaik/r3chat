@@ -10,11 +10,11 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const handleGoogleLogin = async () => {
+  const handleGitHubLogin = async () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: 'github',
         options: {
           redirectTo: `${window.location.origin}/`,
         },
@@ -42,12 +42,12 @@ export default function LoginPage() {
         
         <div className="space-y-4">
           <Button 
-            onClick={handleGoogleLogin}
+            onClick={handleGitHubLogin}
             disabled={isLoading}
             className="w-full"
             size="lg"
           >
-            {isLoading ? "Signing in..." : "Sign in with Google"}
+            {isLoading ? "Signing in..." : "Sign in with GitHub"}
           </Button>
         </div>
         
