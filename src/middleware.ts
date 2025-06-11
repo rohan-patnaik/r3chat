@@ -17,7 +17,6 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          // If the cookie is updated, update the request cookies and response cookies
           request.cookies.set({
             name,
             value,
@@ -35,7 +34,6 @@ export async function middleware(request: NextRequest) {
           });
         },
         remove(name: string, options: CookieOptions) {
-          // If the cookie is removed, update the request cookies and response cookies
           request.cookies.set({
             name,
             value: "",
@@ -57,8 +55,31 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh session if expired - required for Server Components
-  // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
   await supabase.auth.getUser();
+
+  // Get the pathname
+  const { pathname } = request.nextUrl;
+
+  // Check if user is authenticated
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Public routes that don't require authentication
+  const publicRoutes = ['/login', '/auth/callback'];
+  const isPublicRoute = publicRoutes.includes(pathname);
+
+  // If user is not authenticated and trying to access protected route
+  if (!user && !isPublicRoute) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // If user is authenticated and trying to access login page, redirect to home
+  if (user && pathname === '/login') {
+    const homeUrl = new URL('/', request.url);
+    return NextResponse.redirect(homeUrl);
+  }
 
   return response;
 }
@@ -70,7 +91,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - public assets
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
