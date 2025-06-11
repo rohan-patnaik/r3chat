@@ -1,4 +1,3 @@
-// src/lib/supabase/queries.ts
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/lib/database.types";
 
@@ -154,4 +153,25 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   }
 
   return data || [];
+}
+
+export async function createMessage(conversationId: string, role: 'user' | 'assistant', content: string): Promise<Message> {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      conversation_id: conversationId,
+      role,
+      content,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating message:', error);
+    throw error;
+  }
+
+  return data;
 }

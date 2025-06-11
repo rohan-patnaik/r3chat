@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { 
@@ -14,12 +14,14 @@ import {
   TrashIcon,
   PencilIcon,
   CheckIcon,
-  XIcon
+  XIcon,
+  BotIcon,
+  UserIcon
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useConversations } from "@/lib/hooks/useConversations";
 import { formatRelativeTime, groupConversationsByDate } from "@/lib/utils/date";
-import { ConversationWithLastMessage } from "@/lib/supabase/queries";
+import { ConversationWithLastMessage, getMessages } from "@/lib/supabase/queries";
 import { Database } from "@/lib/database.types";
 
 type Message = Database["public"]["Tables"]["messages"]["Row"];
@@ -31,10 +33,20 @@ interface ChatState {
   messages?: Message[];
 }
 
+const availableModels = [
+  { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI' },
+  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI' },
+  { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
+  { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', provider: 'Anthropic' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'Google' },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'Google' },
+];
+
 export default function ChatLayout() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedModel, setSelectedModel] = useState('gpt-4');
   const [chatState, setChatState] = useState<ChatState>({ type: 'home' });
   const [hoveredConversation, setHoveredConversation] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -46,11 +58,71 @@ export default function ChatLayout() {
   const router = useRouter();
   const { conversations, loading, error, refetch, deleteConversation, renameConversation } = useConversations();
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim() || isLoading) return;
     
-    // TODO: Implement message sending with deferred conversation creation
+    const currentMessage = message.trim();
     setMessage("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: currentMessage,
+          model: selectedModel,
+          conversationId: chatState.conversationId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      const data = await response.json();
+
+      // If this was a new conversation, update the chat state and refresh conversations
+      if (data.isNewConversation) {
+        const updatedConversation = {
+          id: data.conversationId,
+          title: 'New Chat', // Will be updated after title generation
+          user_id: '', // Not needed for display
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          lastMessage: data.assistantMessage.content,
+          lastMessageTime: data.assistantMessage.created_at,
+          messageCount: 2,
+        };
+
+        setChatState({
+          type: 'existing',
+          conversationId: data.conversationId,
+          conversation: updatedConversation,
+          messages: [data.userMessage, data.assistantMessage],
+        });
+
+        // Refresh conversations list to show the new conversation
+        await refetch();
+      } else {
+        // For existing conversations, add the new messages to the current state
+        setChatState(prev => ({
+          ...prev,
+          messages: [...(prev.messages || []), data.userMessage, data.assistantMessage],
+        }));
+
+        // Update the conversation's updated_at time in the sidebar
+        await refetch();
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessage(currentMessage); // Restore message on error
+      // You could add a toast notification here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -70,13 +142,27 @@ export default function ChatLayout() {
     setChatState({ type: 'new' });
   };
 
-  const handleConversationClick = (conversation: ConversationWithLastMessage) => {
-    setChatState({
-      type: 'existing',
-      conversationId: conversation.id,
-      conversation,
-      messages: [] // TODO: Load messages for existing conversation
-    });
+  const handleConversationClick = async (conversation: ConversationWithLastMessage) => {
+    try {
+      // Fetch messages for the conversation
+      const response = await fetch(`/api/conversations/${conversation.id}/messages`);
+      const messages = response.ok ? await response.json() : [];
+
+      setChatState({
+        type: 'existing',
+        conversationId: conversation.id,
+        conversation,
+        messages,
+      });
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+      setChatState({
+        type: 'existing',
+        conversationId: conversation.id,
+        conversation,
+        messages: [],
+      });
+    }
   };
 
   const handleBackToHome = () => {
@@ -234,6 +320,9 @@ export default function ChatLayout() {
                 <h2 className="font-medium text-primary">
                   {chatState.conversation?.title}
                 </h2>
+                <div className="ml-auto text-sm text-secondary">
+                  {availableModels.find(m => m.id === selectedModel)?.name}
+                </div>
               </div>
             </div>
 
@@ -243,20 +332,45 @@ export default function ChatLayout() {
                 {chatState.messages && chatState.messages.length > 0 ? (
                   <div className="space-y-6">
                     {chatState.messages.map((msg, i) => (
-                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        {msg.role === 'assistant' && (
+                          <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
+                            <BotIcon className="w-4 h-4 text-white" />
+                          </div>
+                        )}
                         <div className={`max-w-[80%] p-4 rounded-lg ${
                           msg.role === 'user' 
                             ? 'bg-accent text-white' 
                             : 'bg-surface-1 text-primary'
                         }`}>
-                          {msg.content}
+                          <div className="whitespace-pre-wrap">{msg.content}</div>
                         </div>
+                        {msg.role === 'user' && (
+                          <div className="w-8 h-8 bg-surface-1 rounded-full flex items-center justify-center flex-shrink-0">
+                            <UserIcon className="w-4 h-4 text-secondary" />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center text-secondary py-12">
                     Start the conversation by sending a message below.
+                  </div>
+                )}
+                
+                {/* Loading indicator for new messages */}
+                {isLoading && (
+                  <div className="flex gap-3 justify-start mt-6">
+                    <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
+                      <BotIcon className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="bg-surface-1 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 text-secondary">
+                        <LoaderIcon className="w-4 h-4 animate-spin" />
+                        Thinking...
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -475,10 +589,16 @@ export default function ChatLayout() {
             <div className="max-w-3xl mx-auto">
               <div className="flex items-end gap-3">
                 {/* Model Selector */}
-                <select className="px-3 py-2 surface-1 border border-subtle rounded-lg text-primary text-sm focus:outline-none focus:border-accent">
-                  <option>GPT-4</option>
-                  <option>Claude 3</option>
-                  <option>Gemini Pro</option>
+                <select 
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="px-3 py-2 surface-1 border border-subtle rounded-lg text-primary text-sm focus:outline-none focus:border-accent"
+                >
+                  {availableModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name}
+                    </option>
+                  ))}
                 </select>
 
                 {/* Message Input */}
@@ -489,7 +609,8 @@ export default function ChatLayout() {
                     onKeyPress={handleKeyPress}
                     placeholder="Type your message..."
                     rows={1}
-                    className="w-full px-4 py-3 surface-1 border border-subtle rounded-lg text-primary placeholder-tertiary focus:outline-none focus:border-accent resize-none"
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 surface-1 border border-subtle rounded-lg text-primary placeholder-tertiary focus:outline-none focus:border-accent resize-none disabled:opacity-50"
                   />
                 </div>
 
