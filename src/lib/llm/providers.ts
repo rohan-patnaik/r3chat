@@ -1,176 +1,351 @@
-interface LLMResponse {
+import { Database } from "@/lib/database.types";
+
+type Message = Database["public"]["Tables"]["messages"]["Row"];
+
+export interface LLMRequest {
+  messages: Array<{
+    role: "user" | "assistant";
     content: string;
-    model: string;
-    usage?: {
-      prompt_tokens: number;
-      completion_tokens: number;
-      total_tokens: number;
+  }>;
+  model: string;
+  maxTokens?: number;
+}
+
+export interface LLMResponse {
+  content: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+export interface LLMProvider {
+  name: string;
+  generateResponse(request: LLMRequest): Promise<LLMResponse>;
+  streamResponse(request: LLMRequest): AsyncGenerator<string, void, unknown>;
+}
+
+class OpenAIProvider implements LLMProvider {
+  name = "OpenAI";
+  private apiKey: string;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
+  async generateResponse(request: LLMRequest): Promise<LLMResponse> {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: request.model,
+        messages: request.messages,
+        max_tokens: request.maxTokens || 4000,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      content: data.choices[0].message.content,
+      usage: {
+        promptTokens: data.usage.prompt_tokens,
+        completionTokens: data.usage.completion_tokens,
+        totalTokens: data.usage.total_tokens,
+      },
     };
   }
-  
-  export interface LLMProvider {
-    name: string;
-    models: string[];
-    sendMessage: (messages: Array<{role: 'user' | 'assistant', content: string}>, model: string) => Promise<LLMResponse>;
-  }
-  
-  class OpenAIProvider implements LLMProvider {
-    name = 'OpenAI';
-    models = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
-  
-    async sendMessage(messages: Array<{role: 'user' | 'assistant', content: string}>, model: string): Promise<LLMResponse> {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature: 0.7,
-        }),
-      });
-  
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`OpenAI API error: ${error}`);
+
+  async *streamResponse(request: LLMRequest): AsyncGenerator<string, void, unknown> {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: request.model,
+        messages: request.messages,
+        max_tokens: request.maxTokens || 4000,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("No response body");
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") return;
+            
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                yield content;
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        }
       }
-  
-      const data = await response.json();
-      return {
-        content: data.choices[0].message.content,
-        model: data.model,
-        usage: data.usage,
-      };
+    } finally {
+      reader.releaseLock();
     }
   }
-  
-  class AnthropicProvider implements LLMProvider {
-    name = 'Anthropic';
-    models = ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307', 'claude-3-opus-20240229'];
-  
-    async sendMessage(messages: Array<{role: 'user' | 'assistant', content: string}>, model: string): Promise<LLMResponse> {
-      // Convert messages to Anthropic format
-      const anthropicMessages = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-      }));
-  
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': process.env.ANTHROPIC_API_KEY!,
-          'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 4096,
-          messages: anthropicMessages,
-        }),
-      });
-  
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Anthropic API error: ${error}`);
+}
+
+class AnthropicProvider implements LLMProvider {
+  name = "Anthropic";
+  private apiKey: string;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
+  async generateResponse(request: LLMRequest): Promise<LLMResponse> {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": this.apiKey,
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: request.model,
+        max_tokens: request.maxTokens || 4000,
+        messages: request.messages,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Anthropic API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      content: data.content[0].text,
+      usage: {
+        promptTokens: data.usage.input_tokens,
+        completionTokens: data.usage.output_tokens,
+        totalTokens: data.usage.input_tokens + data.usage.output_tokens,
+      },
+    };
+  }
+
+  async *streamResponse(request: LLMRequest): AsyncGenerator<string, void, unknown> {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": this.apiKey,
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: request.model,
+        max_tokens: request.maxTokens || 4000,
+        messages: request.messages,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Anthropic API error: ${response.statusText}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("No response body");
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") return;
+            
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                yield parsed.delta.text;
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        }
       }
-  
-      const data = await response.json();
-      return {
-        content: data.content[0].text,
-        model: data.model,
-        usage: data.usage ? {
-          prompt_tokens: data.usage.input_tokens,
-          completion_tokens: data.usage.output_tokens,
-          total_tokens: data.usage.input_tokens + data.usage.output_tokens,
-        } : undefined,
-      };
+    } finally {
+      reader.releaseLock();
     }
   }
-  
-  class GeminiProvider implements LLMProvider {
-    name = 'Google';
-    models = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'];
-  
-    async sendMessage(messages: Array<{role: 'user' | 'assistant', content: string}>, model: string): Promise<LLMResponse> {
-      // Convert messages to Gemini format
-      const contents = messages.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }],
-      }));
-  
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-        method: 'POST',
+}
+
+class GeminiProvider implements LLMProvider {
+  name = "Google";
+  private apiKey: string;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
+  async generateResponse(request: LLMRequest): Promise<LLMResponse> {
+    const contents = request.messages.map(msg => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }],
+    }));
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${request.model}:generateContent?key=${this.apiKey}`,
+      {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           contents,
           generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 4096,
+            maxOutputTokens: request.maxTokens || 4000,
           },
         }),
-      });
-  
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Gemini API error: ${error}`);
       }
-  
-      const data = await response.json();
-      return {
-        content: data.candidates[0].content.parts[0].text,
-        model,
-        usage: data.usageMetadata ? {
-          prompt_tokens: data.usageMetadata.promptTokenCount || 0,
-          completion_tokens: data.usageMetadata.candidatesTokenCount || 0,
-          total_tokens: data.usageMetadata.totalTokenCount || 0,
-        } : undefined,
-      };
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.statusText}`);
     }
+
+    const data = await response.json();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    return {
+      content,
+      usage: {
+        promptTokens: data.usageMetadata?.promptTokenCount || 0,
+        completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
+        totalTokens: data.usageMetadata?.totalTokenCount || 0,
+      },
+    };
   }
-  
-  export const providers: Record<string, LLMProvider> = {
-    'gpt-4': new OpenAIProvider(),
-    'gpt-4-turbo': new OpenAIProvider(),
-    'gpt-3.5-turbo': new OpenAIProvider(),
-    'claude-3-5-sonnet-20241022': new AnthropicProvider(),
-    'claude-3-haiku-20240307': new AnthropicProvider(),
-    'claude-3-opus-20240229': new AnthropicProvider(),
-    'gemini-1.5-pro': new GeminiProvider(),
-    'gemini-1.5-flash': new GeminiProvider(),
-    'gemini-pro': new GeminiProvider(),
-  };
-  
-  export function getProvider(model: string): LLMProvider {
-    const provider = providers[model];
-    if (!provider) {
-      throw new Error(`Unsupported model: ${model}`);
+
+  async *streamResponse(request: LLMRequest): AsyncGenerator<string, void, unknown> {
+    const contents = request.messages.map(msg => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }],
+    }));
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${request.model}:streamGenerateContent?key=${this.apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents,
+          generationConfig: {
+            maxOutputTokens: request.maxTokens || 4000,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.statusText}`);
     }
-    return provider;
-  }
-  
-  export async function generateTitle(userMessage: string, assistantResponse: string): Promise<string> {
-    const titleProvider = providers['gpt-3.5-turbo']; // Use fast model for title generation
-    
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("No response body");
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
     try {
-      const response = await titleProvider.sendMessage([
-        {
-          role: 'user',
-          content: `Based on this conversation, generate a concise title (4 words maximum):
-  
-  User: ${userMessage}
-  Assistant: ${assistantResponse}
-  
-  Title:`
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.trim() && line.startsWith("{")) {
+            try {
+              const parsed = JSON.parse(line);
+              const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (content) {
+                yield content;
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
         }
-      ], 'gpt-3.5-turbo');
-      
-      return response.content.trim().replace(/^["']|["']$/g, '').substring(0, 50);
-    } catch (error) {
-      console.error('Error generating title:', error);
-      return 'New Chat';
+      }
+    } finally {
+      reader.releaseLock();
     }
   }
+}
+
+export function createProvider(provider: string, apiKey: string): LLMProvider {
+  switch (provider.toLowerCase()) {
+    case "openai":
+      return new OpenAIProvider(apiKey);
+    case "anthropic":
+      return new AnthropicProvider(apiKey);
+    case "google":
+      return new GeminiProvider(apiKey);
+    default:
+      throw new Error(`Unsupported provider: ${provider}`);
+  }
+}
+
+export function generateTitle(content: string): string {
+  const words = content.trim().split(/\s+/);
+  if (words.length <= 4) {
+    return content.trim();
+  }
+  return words.slice(0, 4).join(" ");
+}
