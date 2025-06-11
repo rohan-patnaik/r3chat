@@ -1,7 +1,7 @@
 # R3Chat - Product Requirements Document (Updated)
 
 **Created:** 6/11/2025, 9:29:53 PM
-**Last Updated:** 6/11/2025, 10:50:18 PM
+**Last Updated:** 6/12/2025, 4:11:03 AM
 
 ## 1. Product Vision & Goal
 
@@ -75,14 +75,14 @@ R3Chat is a fast, beautiful, and privacy-respecting AI chat web application. It 
 
 ### Epic 3 – Conversation CRUD
 *   `3.1` List conversations dynamically from the database **(Done)**
-*   `3.2` Create new conversations (deferred model) **(Done - Revised)**
-*   `3.3` Delete conversations **(Next)**
-*   `3.4` Update conversation title (manual rename)
+*   `3.2` Create new conversations (deferred model) **(Done)**
+*   `3.3` Delete conversations **(Done)**
+*   `3.4` Update conversation title (manual rename) **(Done)**
 
 ### Epic 4 – Messaging
-*   `4.1` Send a message and get a non-streamed response
-*   `4.2` Implement streaming responses from the AI model
-*   `4.3` Add model selection dropdown functionality
+*   `4.1` Send a message and get a non-streamed response **(Done)**
+*   `4.2` Implement streaming responses from the AI model **(Done)**
+*   `4.3` Add model selection dropdown functionality **(Next)**
 
 ### Epic 5 – Settings
 *   `5.1` Create the settings page UI

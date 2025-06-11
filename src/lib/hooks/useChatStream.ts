@@ -1,3 +1,5 @@
+// src/lib/hooks/useChatStream.ts
+
 import { useState, useCallback, useRef } from "react";
 import { Database } from "@/lib/database.types";
 
@@ -8,6 +10,7 @@ interface StreamMessage {
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
+  isError?: boolean;
 }
 
 interface UseChatStreamOptions {
@@ -20,209 +23,175 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
   const [messages, setMessages] = useState<StreamMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isStreamingRef = useRef(isStreaming);
+  isStreamingRef.current = isStreaming;
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const sendMessage = useCallback(
-    async (
-      content: string,
-      model: string,
-      conversationId?: string,
-      existingMessages: Message[] = []
-    ) => {
-      if (isStreaming) return;
+    async (prompt: string, conversationId?: string, model?: string) => {
+      if (isStreamingRef.current) return;
 
       setIsStreaming(true);
       setError(null);
+      abortControllerRef.current = new AbortController();
 
-      // Add user message immediately
-      const userMessage: StreamMessage = {
-        role: "user",
-        content,
-      };
-
-      setMessages(prev => [...prev, userMessage]);
+      // Add user message to UI immediately
+      const newUserMessage: StreamMessage = { role: "user", content: prompt };
+      setMessages((prev) => [...prev, newUserMessage]);
 
       // Create assistant message placeholder
-      const assistantMessage: StreamMessage = {
+      const assistantPlaceholder: StreamMessage = {
         role: "assistant",
         content: "",
         isStreaming: true,
       };
+      setMessages((prev) => [...prev, assistantPlaceholder]);
 
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // Create abort controller
-      abortControllerRef.current = new AbortController();
+      // **FIX:** Send `prompt` instead of a `messages` array.
+      const body = {
+        prompt: prompt,
+        model: model,
+        conversationId,
+      };
 
       try {
         const response = await fetch("/api/messages/stream", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            conversationId,
-            model,
-            messages: existingMessages.map(msg => ({
-              role: msg.role,
-              content: msg.content,
-            })),
-            content,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
           signal: abortControllerRef.current.signal,
         });
 
         if (!response.ok) {
-          // Try to get error message from response
-          let errorMessage = `HTTP error! status: ${response.status}`;
+          // Try to get error message from response body
+          let errorBody;
           try {
-            const errorData = await response.json();
-            errorMessage = errorData.error || errorMessage;
-          } catch {
+            errorBody = await response.json();
+          } catch (e) {
             // If we can't parse JSON, use the status text
-            errorMessage = response.statusText || errorMessage;
+            errorBody = { error: response.statusText };
           }
-          throw new Error(errorMessage);
+          throw new Error(
+            errorBody.error || `Request failed with status ${response.status}`,
+          );
         }
 
-        // Check if response body exists
         if (!response.body) {
-          throw new Error("No response body received");
+          throw new Error("Response body is empty");
         }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = "";
+        let done = false;
+        let assistantMessageId: number | undefined = undefined;
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        while (!done) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n\n");
 
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || "";
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const jsonString = line.substring(6);
+              if (!jsonString) continue;
 
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const data = line.slice(6).trim();
-                console.log("🔍 SSE Line:", data);
-                if (!data) continue;
-                
-                try {
-                  const parsed = JSON.parse(data);
-                  console.log("🔍 Parsed SSE:", parsed);
+              console.log("🔍 SSE Line:", jsonString);
+              const parsed = JSON.parse(jsonString);
+              console.log("🔍 Parsed SSE:", parsed);
 
-                  switch (parsed.type) {
-                    case "start":
-                      console.log("🟢 Stream started");
-                      if (parsed.isFirstMessage && options.onConversationCreated) {
-                        options.onConversationCreated(parsed.conversationId);
-                      }
-                      // Update assistant message with ID
-                      setMessages(prev =>
-                        prev.map((msg, index) =>
-                          index === prev.length - 1
-                            ? { ...msg, id: parsed.messageId }
-                            : msg
-                        )
-                      );
-                      break;
-
-                    case "token":
-                      console.log("🔤 Token received:", parsed.content);
-                      setMessages(prev =>
-                        prev.map((msg, index) =>
-                          index === prev.length - 1
-                            ? { ...msg, content: msg.content + parsed.content }
-                            : msg
-                        )
-                      );
-                      break;
-
-                    case "done":
-                      console.log("✅ Stream completed");
-                      setMessages(prev =>
-                        prev.map((msg, index) =>
-                          index === prev.length - 1
-                            ? { ...msg, isStreaming: false }
-                            : msg
-                        )
-                      );
-                      if (options.onMessageComplete) {
-                        options.onMessageComplete();
-                      }
-                      break;
-
-                    case "error":
-                      throw new Error(parsed.error || "Unknown streaming error");
-                  }
-                } catch (parseError) {
-                  console.error("Failed to parse SSE data:", parseError, "Raw data:", data);
+              if (parsed.type === "start") {
+                console.log("🟢 Stream started");
+                assistantMessageId = parsed.messageId;
+                if (parsed.isFirstMessage && options.onConversationCreated) {
+                  options.onConversationCreated(parsed.conversationId);
                 }
+                // Update assistant message with ID
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.isStreaming ? { ...msg, id: assistantMessageId } : msg,
+                  ),
+                );
+              } else if (parsed.type === "token") {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, content: msg.content + parsed.content }
+                      : msg,
+                  ),
+                );
+              } else if (parsed.type === "done") {
+                console.log("✅ Stream completed");
+                if (options.onMessageComplete) {
+                  options.onMessageComplete();
+                }
+              } else if (parsed.type === "error") {
+                console.error("Stream error:", parsed.message);
+                setError(parsed.message);
+                if (options.onError) {
+                  options.onError(parsed.message);
+                }
+                // Mark assistant message as failed
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? {
+                          ...msg,
+                          isError: true,
+                          content: `Error: ${parsed.message}`,
+                        }
+                      : msg,
+                  ),
+                );
               }
             }
           }
-        } finally {
-          reader.releaseLock();
         }
-      } catch (error) {
-        console.error("Send message error:", error);
-        
-        if (error instanceof Error && error.name === "AbortError") {
+      } catch (e: any) {
+        if (e.name === "AbortError") {
+          console.log("Stream aborted by user.");
           // Stream was aborted, remove the streaming assistant message
-          setMessages(prev => prev.slice(0, -1));
-        } else {
-          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-          setError(errorMessage);
-          if (options.onError) {
-            options.onError(errorMessage);
-          }
-          // Mark assistant message as failed
-          setMessages(prev =>
-            prev.map((msg, index) =>
-              index === prev.length - 1
-                ? { ...msg, content: `Error: ${errorMessage}`, isStreaming: false }
-                : msg
-            )
-          );
+          setMessages((prev) => prev.filter((msg) => !msg.isStreaming));
+          return;
         }
+        console.error("Send message error:", e);
+        setError(e.message);
+        if (options.onError) {
+          options.onError(e.message);
+        }
+        // Mark assistant message as failed
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.isStreaming
+              ? { ...msg, isError: true, content: `Error: ${e.message}` }
+              : msg,
+          ),
+        );
       } finally {
         setIsStreaming(false);
+        setMessages((prev) =>
+          prev.map((msg) => ({ ...msg, isStreaming: false })),
+        );
         abortControllerRef.current = null;
       }
     },
-    [isStreaming, options]
+    [options.onConversationCreated, options.onMessageComplete, options.onError],
   );
 
-  const abortStream = useCallback(() => {
+  const stopStreaming = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
   }, []);
 
-  const resetMessages = useCallback(() => {
-    setMessages([]);
-    setError(null);
-  }, []);
-
-  const setInitialMessages = useCallback((initialMessages: Message[]) => {
-    setMessages(
-      initialMessages.map(msg => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content,
-      }))
-    );
-  }, []);
-
   return {
     messages,
+    setMessages,
     isStreaming,
     error,
     sendMessage,
-    abortStream,
-    resetMessages,
-    setInitialMessages,
+    stopStreaming,
   };
 }

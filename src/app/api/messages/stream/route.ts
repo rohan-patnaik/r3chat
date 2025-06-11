@@ -1,190 +1,192 @@
-import { NextRequest } from "next/server";
+// src/app/api/messages/stream/route.ts
+
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createProvider, generateTitle } from "@/lib/llm/providers";
+import { Database } from "@/lib/database.types";
 
-export const runtime = "edge";
+type Message = Database["public"]["Tables"]["messages"]["Row"];
+
+function getProviderFromModel(model: string): string {
+  if (model.startsWith("gpt")) return "openai";
+  if (model.startsWith("claude")) return "anthropic";
+  if (model.startsWith("gemini")) return "google";
+  throw new Error(`Unknown provider for model: ${model}`);
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { conversationId, model, messages, content } = body;
+    const { prompt, model, conversationId: currentConversationId } = body;
 
-    if (!content || !model) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: content and model" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+    if (!prompt) {
+      return NextResponse.json(
+        { error: "Prompt is required." },
+        { status: 400 },
       );
     }
 
-    const supabase = await createClient(); // Keep the await - this function IS async
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get API key for the provider
-    const modelProvider = getProviderFromModel(model);
-    const { data: providerKey } = await supabase
+    const providerName = getProviderFromModel(model);
+
+    const { data: providerKey, error: keyError } = await supabase
       .from("provider_keys")
       .select("api_key")
       .eq("user_id", user.id)
-      .eq("provider", modelProvider)
+      .eq("provider", providerName)
       .single();
 
-    if (!providerKey?.api_key) {
-      return new Response(
-        JSON.stringify({ error: `API key not found for provider: ${modelProvider}` }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+    if (keyError || !providerKey) {
+      return NextResponse.json(
+        {
+          error: `API key not found for provider: ${providerName}. Please check the database.`,
+        },
+        { status: 400 },
       );
     }
 
-    let actualConversationId = conversationId;
+    // **THE FIX: Trim whitespace from the retrieved key**
+    const apiKey = providerKey.api_key.trim();
+
+    let conversationId = currentConversationId;
     let isFirstMessage = false;
 
-    // Create conversation if this is a new chat
     if (!conversationId) {
-      const title = generateTitle(content);
-      const { data: conversation, error: conversationError } = await supabase
+      isFirstMessage = true;
+      const { data: newConversation, error: convError } = await supabase
         .from("conversations")
+        .insert({ user_id: user.id, title: "New Chat" })
+        .select()
+        .single();
+
+      if (convError) {
+        throw new Error(`Error creating conversation: ${convError.message}`);
+      }
+      conversationId = newConversation.id;
+    }
+
+    await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      role: "user",
+      content: prompt,
+    });
+
+    const { data: history, error: historyError } = await supabase
+      .from("messages")
+      .select("role, content")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true });
+
+    if (historyError) {
+      throw new Error(`Error fetching history: ${historyError.message}`);
+    }
+
+    const { data: assistantMessage, error: assistantMessageError } =
+      await supabase
+        .from("messages")
         .insert({
-          user_id: user.id,
-          title,
+          conversation_id: conversationId,
+          role: "assistant",
+          content: "",
         })
         .select()
         .single();
 
-      if (conversationError || !conversation) {
-        console.error("Conversation creation error:", conversationError);
-        return new Response(
-          JSON.stringify({ error: "Failed to create conversation" }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      actualConversationId = conversation.id;
-      isFirstMessage = true;
-    }
-
-    // Save user message
-    const { data: userMessage, error: userMessageError } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: actualConversationId,
-        role: "user",
-        content,
-      })
-      .select()
-      .single();
-
-    if (userMessageError || !userMessage) {
-      console.error("User message error:", userMessageError);
-      return new Response(
-        JSON.stringify({ error: "Failed to save user message" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+    if (assistantMessageError) {
+      throw new Error(
+        `Error creating assistant message: ${assistantMessageError.message}`,
       );
     }
 
-    // Create assistant message placeholder
-    const { data: assistantMessage, error: assistantMessageError } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: actualConversationId,
-        role: "assistant",
-        content: "",
-      })
-      .select()
-      .single();
-
-    if (assistantMessageError || !assistantMessage) {
-      console.error("Assistant message error:", assistantMessageError);
-      return new Response(
-        JSON.stringify({ error: "Failed to create assistant message" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Initialize provider
-    const provider = createProvider(modelProvider, providerKey.api_key);
-
-    // Create stream
-    const encoder = new TextEncoder();
-    let fullContent = "";
+    // Use the trimmed API key
+    const provider = createProvider(providerName, apiKey);
 
     const stream = new ReadableStream({
       async start(controller) {
-        try {
-          // Send initial data with conversation and message IDs
-          controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify({
-                type: "start",
-                conversationId: actualConversationId,
-                messageId: assistantMessage.id,
-                isFirstMessage,
-              })}\n\n`
-            )
-          );
+        controller.enqueue(
+          `data: ${JSON.stringify({
+            type: "start",
+            conversationId: conversationId,
+            messageId: assistantMessage.id,
+            isFirstMessage: isFirstMessage,
+          })}\n\n`,
+        );
 
-          // Stream the response
-          const requestMessages = [...(messages || []), { role: "user" as const, content }];
-          
-          for await (const chunk of provider.streamResponse({
-            messages: requestMessages,
-            model,
-          })) {
+        let fullContent = "";
+        let hasReceivedTokens = false;
+
+        try {
+          const llmStream = provider.streamResponse({
+            messages: history.map((msg) => ({
+              role: msg.role as "user" | "assistant",
+              content: msg.content,
+            })),
+            model: model,
+          });
+
+          for await (const chunk of llmStream) {
+            hasReceivedTokens = true;
             fullContent += chunk;
             controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ type: "token", content: chunk })}\n\n`)
+              `data: ${JSON.stringify({ type: "token", content: chunk })}\n\n`,
             );
           }
 
-          // Update the assistant message with full content
-          const { error: updateError } = await supabase
+          if (!hasReceivedTokens) {
+            controller.enqueue(
+              `data: ${JSON.stringify({
+                type: "error",
+                message:
+                  "The model returned an empty response. Check model name and API key permissions.",
+              })}\n\n`,
+            );
+            controller.close();
+            return;
+          }
+
+          await supabase
             .from("messages")
             .update({ content: fullContent })
             .eq("id", assistantMessage.id);
 
-          if (updateError) {
-            console.error("Failed to update assistant message:", updateError);
+          if (isFirstMessage) {
+            const title = generateTitle(prompt);
+            await supabase
+              .from("conversations")
+              .update({ title: title })
+              .eq("id", conversationId);
           }
 
-          // Update conversation timestamp
-          const { error: timestampError } = await supabase
+          await supabase
             .from("conversations")
             .update({ updated_at: new Date().toISOString() })
-            .eq("id", actualConversationId);
+            .eq("id", conversationId);
 
-          if (timestampError) {
-            console.error("Failed to update conversation timestamp:", timestampError);
-          }
-
-          // Send completion
           controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify({
-                type: "done",
-                conversationId: actualConversationId,
-                messageId: assistantMessage.id,
-              })}\n\n`
-            )
+            `data: ${JSON.stringify({
+              type: "done",
+              conversationId: conversationId,
+              messageId: assistantMessage.id,
+            })}\n\n`,
           );
-
-          controller.close();
-        } catch (error) {
-          console.error("Streaming error:", error);
+        } catch (e: any) {
+          console.error("Streaming error:", e);
           controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify({
-                type: "error",
-                error: error instanceof Error ? error.message : "Unknown streaming error",
-              })}\n\n`
-            )
+            `data: ${JSON.stringify({
+              type: "error",
+              message:
+                e.message || "An unexpected error occurred during the stream.",
+            })}\n\n`,
           );
+        } finally {
           controller.close();
         }
       },
@@ -192,28 +194,16 @@ export async function POST(request: NextRequest) {
 
     return new Response(stream, {
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+        Connection: "keep-alive",
       },
     });
-  } catch (error) {
-    console.error("Stream API error:", error);
-    return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Internal Server Error" 
-      }),
-      { 
-        status: 500, 
-        headers: { "Content-Type": "application/json" } 
-      }
+  } catch (error: any) {
+    console.error("[API /messages/stream] Internal Server Error:", error);
+    return NextResponse.json(
+      { error: error.message || "An internal server error occurred." },
+      { status: 500 },
     );
   }
-}
-
-function getProviderFromModel(model: string): string {
-  if (model.startsWith("gpt-")) return "openai";
-  if (model.startsWith("claude-")) return "anthropic";
-  if (model.startsWith("gemini-")) return "google";
-  throw new Error(`Unknown model: ${model}`);
 }
