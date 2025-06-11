@@ -9,42 +9,20 @@ import {
   SendIcon, 
   SearchIcon, 
   SettingsIcon,
-  LogOutIcon
+  LogOutIcon,
+  LoaderIcon
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-
-interface Conversation {
-  id: string;
-  title: string;
-  lastMessage: string;
-  timestamp: string;
-}
+import { useConversations } from "@/lib/hooks/useConversations";
+import { formatRelativeTime, groupConversationsByDate } from "@/lib/utils/date";
+import { ConversationWithLastMessage } from "@/lib/supabase/queries";
 
 export default function ChatLayout() {
-  const [conversations] = useState<Conversation[]>([
-    {
-      id: "1",
-      title: "Weight loss strategy for 5'8...",
-      lastMessage: "Thanks for the detailed plan!",
-      timestamp: "2h ago",
-    },
-    {
-      id: "2", 
-      title: "Workout Plan",
-      lastMessage: "Perfect routine breakdown",
-      timestamp: "1d ago",
-    },
-    {
-      id: "3",
-      title: "Machine Learning 6 Hours",
-      lastMessage: "Excellent explanation of neural networks",
-      timestamp: "2d ago",
-    },
-  ]);
-
+  const { conversations, isLoading, error } = useConversations();
   const [currentMessage, setCurrentMessage] = useState("");
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const router = useRouter();
   const supabase = createClient();
@@ -77,6 +55,55 @@ export default function ChatLayout() {
     } finally {
       setIsLoggingOut(false);
     }
+  };
+
+  // Filter conversations based on search query
+  const filteredConversations = conversations.filter(conversation =>
+    conversation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (conversation.lastMessage && conversation.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  // Group filtered conversations by date
+  const groupedConversations = groupConversationsByDate(filteredConversations);
+
+  const renderConversationGroup = (title: string, conversations: ConversationWithLastMessage[]) => {
+    if (conversations.length === 0) return null;
+
+    return (
+      <div className="mb-4" key={title}>
+        <h3 className="text-xs font-medium text-secondary uppercase tracking-wider px-2 py-1 mb-2">
+          {title}
+        </h3>
+        {conversations.map((conversation) => (
+          <button
+            key={conversation.id}
+            onClick={() => setSelectedConversation(conversation.id)}
+            className={`w-full text-left p-3 rounded-lg mb-1 transition-colors ${
+              selectedConversation === conversation.id
+                ? "surface-2 border border-subtle"
+                : "hover:surface-2"
+            }`}
+          >
+            <div className="flex items-start">
+              <MessageSquareIcon className="w-4 h-4 text-secondary mt-1 mr-3 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium text-primary truncate">
+                  {conversation.title}
+                </h4>
+                {conversation.lastMessage && (
+                  <p className="text-xs text-secondary truncate mt-1">
+                    {conversation.lastMessage}
+                  </p>
+                )}
+                <span className="text-xs text-tertiary">
+                  {formatRelativeTime(conversation.lastMessageTime || conversation.created_at)}
+                </span>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -121,6 +148,8 @@ export default function ChatLayout() {
             <input
               type="text"
               placeholder="Search your threads..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 surface-2 border border-subtle rounded-lg text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
             />
           </div>
@@ -129,44 +158,35 @@ export default function ChatLayout() {
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-2">
-            <div className="mb-4">
-              <h3 className="text-xs font-medium text-secondary uppercase tracking-wider px-2 py-1">
-                Pinned
-              </h3>
-            </div>
-            
-            <div className="mb-4">
-              <h3 className="text-xs font-medium text-secondary uppercase tracking-wider px-2 py-1">
-                Today
-              </h3>
-              
-              {conversations.map((conversation) => (
-                <button
-                  key={conversation.id}
-                  onClick={() => setSelectedConversation(conversation.id)}
-                  className={`w-full text-left p-3 rounded-lg mb-1 transition-colors ${
-                    selectedConversation === conversation.id
-                      ? "surface-2 border border-subtle"
-                      : "hover:surface-2"
-                  }`}
-                >
-                  <div className="flex items-start">
-                    <MessageSquareIcon className="w-4 h-4 text-secondary mt-1 mr-3 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-primary truncate">
-                        {conversation.title}
-                      </h4>
-                      <p className="text-xs text-secondary truncate mt-1">
-                        {conversation.lastMessage}
-                      </p>
-                      <span className="text-xs text-tertiary">
-                        {conversation.timestamp}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <LoaderIcon className="w-6 h-6 text-secondary animate-spin" />
+                <span className="ml-2 text-secondary">Loading conversations...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-error text-sm">{error}</p>
+              </div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageSquareIcon className="w-8 h-8 mx-auto mb-2 text-secondary opacity-50" />
+                <p className="text-secondary text-sm">
+                  {searchQuery ? "No conversations found" : "No conversations yet"}
+                </p>
+                {searchQuery && (
+                  <p className="text-tertiary text-xs mt-1">
+                    Try adjusting your search terms
+                  </p>
+                )}
+              </div>
+            ) : (
+              <>
+                {renderConversationGroup("Today", groupedConversations.today)}
+                {renderConversationGroup("Yesterday", groupedConversations.yesterday)}
+                {renderConversationGroup("This Week", groupedConversations.thisWeek)}
+                {renderConversationGroup("Older", groupedConversations.older)}
+              </>
+            )}
           </div>
         </div>
 
