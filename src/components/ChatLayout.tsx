@@ -16,13 +16,23 @@ import { createClient } from "@/lib/supabase/client";
 import { useConversations } from "@/lib/hooks/useConversations";
 import { formatRelativeTime, groupConversationsByDate } from "@/lib/utils/date";
 import { ConversationWithLastMessage } from "@/lib/supabase/queries";
+import { Database } from "@/lib/database.types";
+
+type Message = Database["public"]["Tables"]["messages"]["Row"];
+
+interface ChatState {
+  type: 'home' | 'new' | 'existing';
+  conversationId?: string;
+  conversation?: ConversationWithLastMessage;
+  messages?: Message[];
+}
 
 export default function ChatLayout() {
   const { conversations, isLoading, error } = useConversations();
   const [currentMessage, setCurrentMessage] = useState("");
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [chatState, setChatState] = useState<ChatState>({ type: 'home' });
   
   const router = useRouter();
   const supabase = createClient();
@@ -30,6 +40,7 @@ export default function ChatLayout() {
   const handleSendMessage = () => {
     if (currentMessage.trim()) {
       console.log("Sending message:", currentMessage);
+      // TODO: Implement message sending with deferred conversation creation
       setCurrentMessage("");
     }
   };
@@ -57,6 +68,23 @@ export default function ChatLayout() {
     }
   };
 
+  const handleNewChat = () => {
+    setChatState({ type: 'new' });
+  };
+
+  const handleConversationClick = (conversation: ConversationWithLastMessage) => {
+    setChatState({ 
+      type: 'existing', 
+      conversationId: conversation.id,
+      conversation,
+      messages: [] // TODO: Load messages for existing conversation
+    });
+  };
+
+  const handleBackToHome = () => {
+    setChatState({ type: 'home' });
+  };
+
   // Filter conversations based on search query
   const filteredConversations = conversations.filter(conversation =>
     conversation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -77,9 +105,9 @@ export default function ChatLayout() {
         {conversations.map((conversation) => (
           <button
             key={conversation.id}
-            onClick={() => setSelectedConversation(conversation.id)}
+            onClick={() => handleConversationClick(conversation)}
             className={`w-full text-left p-3 rounded-lg mb-1 transition-colors ${
-              selectedConversation === conversation.id
+              chatState.conversationId === conversation.id
                 ? "surface-2 border border-subtle"
                 : "hover:surface-2"
             }`}
@@ -104,6 +132,134 @@ export default function ChatLayout() {
         ))}
       </div>
     );
+  };
+
+  const renderChatContent = () => {
+    switch (chatState.type) {
+      case 'new':
+        return (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center max-w-2xl mx-auto p-6">
+              <h1 className="text-3xl font-semibold text-primary mb-6">
+                How can I help you today?
+              </h1>
+              <p className="text-secondary mb-8">
+                Start typing your message below to begin a new conversation.
+              </p>
+            </div>
+          </div>
+        );
+
+      case 'existing':
+        return (
+          <div className="flex flex-col h-full">
+            {/* Chat Header */}
+            <div className="border-b border-subtle surface-1 p-4">
+              <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold text-primary truncate">
+                  {chatState.conversation?.title || 'Chat'}
+                </h1>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleBackToHome}
+                  className="text-secondary hover:text-primary"
+                >
+                  ←
+                </Button>
+              </div>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {!chatState.messages || chatState.messages.length === 0 ? (
+                <div className="text-center text-secondary py-12">
+                  <p className="text-lg mb-2">No messages yet</p>
+                  <p className="text-sm text-tertiary">
+                    Start typing to continue this conversation
+                  </p>
+                </div>
+              ) : (
+                <div className="max-w-4xl mx-auto space-y-6">
+                  {chatState.messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${
+                        message.role === "user" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-3xl px-4 py-3 rounded-lg ${
+                          message.role === "user"
+                            ? "bg-accent text-white"
+                            : "surface-1 border border-subtle text-primary"
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      default: // 'home'
+        return (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center max-w-2xl mx-auto p-6">
+              <h1 className="text-3xl font-semibold text-primary mb-6">
+                How can I help you, Rohan?
+              </h1>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-wrap justify-center gap-3 mb-8">
+                <Button variant="outline" className="border-subtle hover:surface-2">
+                  Create
+                </Button>
+                <Button variant="outline" className="border-subtle hover:surface-2">
+                  Explore
+                </Button>
+                <Button variant="outline" className="border-subtle hover:surface-2">
+                  Code
+                </Button>
+                <Button variant="outline" className="border-subtle hover:surface-2">
+                  Learn
+                </Button>
+              </div>
+
+              {/* Example Prompts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button 
+                  onClick={handleNewChat}
+                  className="p-4 surface-1 border border-subtle rounded-lg text-left hover:surface-2 transition-colors"
+                >
+                  <p className="text-primary font-medium">How does AI work?</p>
+                </button>
+                <button 
+                  onClick={handleNewChat}
+                  className="p-4 surface-1 border border-subtle rounded-lg text-left hover:surface-2 transition-colors"
+                >
+                  <p className="text-primary font-medium">Are black holes real?</p>
+                </button>
+                <button 
+                  onClick={handleNewChat}
+                  className="p-4 surface-1 border border-subtle rounded-lg text-left hover:surface-2 transition-colors"
+                >
+                  <p className="text-primary font-medium">How many Rs are in the word "strawberry"?</p>
+                </button>
+                <button 
+                  onClick={handleNewChat}
+                  className="p-4 surface-1 border border-subtle rounded-lg text-left hover:surface-2 transition-colors"
+                >
+                  <p className="text-primary font-medium">What is the meaning of life?</p>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+    }
   };
 
   return (
@@ -135,7 +291,10 @@ export default function ChatLayout() {
           </div>
           
           {/* New Chat Button */}
-          <Button className="w-full bg-accent hover:bg-accent-hover text-white border-0">
+          <Button 
+            onClick={handleNewChat}
+            className="w-full bg-accent hover:bg-accent-hover text-white border-0"
+          >
             <PlusIcon className="w-4 h-4 mr-2" />
             New Chat
           </Button>
@@ -178,6 +337,11 @@ export default function ChatLayout() {
                     Try adjusting your search terms
                   </p>
                 )}
+                {!searchQuery && (
+                  <p className="text-tertiary text-xs mt-1">
+                    Click "New Chat" to start your first conversation
+                  </p>
+                )}
               </div>
             ) : (
               <>
@@ -210,98 +374,50 @@ export default function ChatLayout() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
-        {/* Chat Messages Area */}
+        {/* Chat Content */}
         <div className="flex-1 overflow-y-auto">
-          {selectedConversation ? (
-            <div className="p-6">
-              <div className="max-w-3xl mx-auto">
-                {/* Chat messages would go here */}
-                <div className="text-center text-secondary">
-                  <MessageSquareIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Start a conversation...</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center max-w-2xl mx-auto p-6">
-                <h1 className="text-3xl font-semibold text-primary mb-6">
-                  How can I help you, Rohan?
-                </h1>
-                
-                {/* Action Buttons */}
-                <div className="flex flex-wrap justify-center gap-3 mb-8">
-                  <Button variant="outline" className="border-subtle hover:surface-2">
-                    Create
-                  </Button>
-                  <Button variant="outline" className="border-subtle hover:surface-2">
-                    Explore
-                  </Button>
-                  <Button variant="outline" className="border-subtle hover:surface-2">
-                    Code
-                  </Button>
-                  <Button variant="outline" className="border-subtle hover:surface-2">
-                    Learn
-                  </Button>
-                </div>
-
-                {/* Example Prompts */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button className="p-4 surface-1 border border-subtle rounded-lg text-left hover:surface-2 transition-colors">
-                    <p className="text-primary font-medium">How does AI work?</p>
-                  </button>
-                  <button className="p-4 surface-1 border border-subtle rounded-lg text-left hover:surface-2 transition-colors">
-                    <p className="text-primary font-medium">Are black holes real?</p>
-                  </button>
-                  <button className="p-4 surface-1 border border-subtle rounded-lg text-left hover:surface-2 transition-colors">
-                    <p className="text-primary font-medium">How many Rs are in the word "strawberry"?</p>
-                  </button>
-                  <button className="p-4 surface-1 border border-subtle rounded-lg text-left hover:surface-2 transition-colors">
-                    <p className="text-primary font-medium">What is the meaning of life?</p>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {renderChatContent()}
         </div>
 
-        {/* Input Area */}
-        <div className="border-t border-subtle surface-1 p-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-end space-x-3">
-              {/* Model Selector */}
-              <div className="flex-shrink-0">
-                <select className="surface-2 border border-subtle rounded-lg px-3 py-2 text-primary focus:outline-none focus:ring-2 focus:ring-accent-500">
-                  <option>Gemini Flash</option>
-                  <option>GPT-4</option>
-                  <option>Claude</option>
-                </select>
-              </div>
+        {/* Input Area - Show only for new chat or existing chat */}
+        {(chatState.type === 'new' || chatState.type === 'existing') && (
+          <div className="border-t border-subtle surface-1 p-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-end space-x-3">
+                {/* Model Selector */}
+                <div className="flex-shrink-0">
+                  <select className="surface-2 border border-subtle rounded-lg px-3 py-2 text-primary focus:outline-none focus:ring-2 focus:ring-accent-500">
+                    <option>Gemini Flash</option>
+                    <option>GPT-4</option>
+                    <option>Claude</option>
+                  </select>
+                </div>
 
-              {/* Message Input */}
-              <div className="flex-1 relative">
-                <textarea
-                  value={currentMessage}
-                  onChange={(e) => setCurrentMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message here..."
-                  className="w-full surface-2 border border-subtle rounded-lg px-4 py-3 text-primary placeholder-text-secondary resize-none focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                  rows={1}
-                  style={{ minHeight: "48px", maxHeight: "200px" }}
-                />
-              </div>
+                {/* Message Input */}
+                <div className="flex-1 relative">
+                  <textarea
+                    value={currentMessage}
+                    onChange={(e) => setCurrentMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message here..."
+                    className="w-full surface-2 border border-subtle rounded-lg px-4 py-3 text-primary placeholder-text-secondary resize-none focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
+                    rows={1}
+                    style={{ minHeight: "48px", maxHeight: "200px" }}
+                  />
+                </div>
 
-              {/* Send Button */}
-              <Button
-                onClick={handleSendMessage}
-                disabled={!currentMessage.trim()}
-                className="bg-accent hover:bg-accent-hover text-white border-0 px-4 py-3"
-              >
-                <SendIcon className="w-4 h-4" />
-              </Button>
+                {/* Send Button */}
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!currentMessage.trim()}
+                  className="bg-accent hover:bg-accent-hover text-white border-0 px-4 py-3"
+                >
+                  <SendIcon className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -83,6 +83,47 @@ export async function getConversation(conversationId: string, userId: string): P
   return conversation;
 }
 
+export async function createConversation(userId: string, title: string = "New Chat"): Promise<Conversation> {
+  const supabase = await createClient();
+
+  const { data: conversation, error } = await supabase
+    .from("conversations")
+    .insert([
+      {
+        user_id: userId,
+        title: title.trim() || "New Chat",
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating conversation:", error);
+    throw new Error("Failed to create conversation");
+  }
+
+  return conversation;
+}
+
+export async function updateConversationTitle(conversationId: string, userId: string, title: string): Promise<Conversation> {
+  const supabase = await createClient();
+
+  const { data: conversation, error } = await supabase
+    .from("conversations")
+    .update({ title: title.trim() || "New Chat" })
+    .eq("id", conversationId)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating conversation title:", error);
+    throw new Error("Failed to update conversation title");
+  }
+
+  return conversation;
+}
+
 export async function getMessages(conversationId: string): Promise<Message[]> {
   const supabase = await createClient();
 
