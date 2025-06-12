@@ -140,3 +140,65 @@ const AVAILABLE_MODELS: ModelOption[] = [
     provider: "anthropic",
   },
 ];
+
+
+## Prompt: UI Design Fixes and Improvements
+
+### Context
+All errors in the application have been resolved, but recent UI changes have broken the design. The UI elements need to be adjusted to ensure a visually pleasing and consistent appearance across the app.
+
+### Tasks
+
+1. **General UI Improvements**
+    - Adjust spacing between all UI elements (text, headings, buttons, etc.) for a clean and beautiful layout.
+    - Ensure all elements fit well and are visually pleasing.
+
+2. **Sidebar**
+    - Replace the sidebar open/close icon with a hamburger icon at the top left of the page.
+    - Move the User Profile section to the bottom of the sidebar, displaying the Google ID image as the profile picture.
+
+3. **Settings and Theme Icons**
+    - Place these icons at the top left.
+    - Add a subtle, translucent, contrasting shadow on hover.
+    - This should work for both light and dark themes.
+
+4. **Section Headers**
+    - For "Today", "Yesterday", "ThisWeek", "Older":
+        - Use a smaller, thinner font.
+        - Left-align as small headers in appropriate locations.
+
+5. **Chatbox**
+    - Make the chatbox taller and slightly translucent for background visibility.
+    - At the bottom part of the chatbox, add:
+        - Model dropdown
+        - Attachment icon
+        - "Go" button icon (aligned to the far right)
+    - Refer to the 6th attached image for reference.
+    - The text written in the chatbox should not be above this bottom part so it does not hinder visibility for user.
+
+6. **Settings Page Sections**
+    - **Account Section:** Improve aesthetics and spacing.
+    - **Models Section:** Apply better spacing and design (see 7th image for reference to what is needed; 8th image shows current state).
+    - **API Keys Section:** Apply the same design principles (see 9th image for current state).
+    - **Usage Section:** Apply the same design principles (see 10th image for current state).
+
+### Rendering Requirements
+
+- **Code:** Display all code in proper code snippet blocks.
+- **Math/LaTeX:** Render all math formulas and LaTeX appropriately.
+- Think and take care of other rendering issues while the response generates.
+
+### Deliverables
+
+- List all assumptions made.
+- Describe the approach and specific changes you will make.
+- After implementing the above, review the PRD and list any remaining tasks.
+- Do not break any existing functionality.
+
+### References
+
+- Use the attached images for visual reference of the current and desired UI states.
+
+---
+
+**Please proceed step by step, ensuring clarity and completeness in your response.**
