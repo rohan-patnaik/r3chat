@@ -1,5 +1,3 @@
-// src/components/ChatLayout.tsx
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -9,18 +7,21 @@ import {
   PlusIcon,
   MessageSquareIcon,
   SendIcon,
-  SearchIcon,
   SettingsIcon,
   LogOutIcon,
   StopCircleIcon,
   PencilIcon,
   ArrowLeftIcon,
   TrashIcon,
+  PaperclipIcon,
+  MenuIcon,
+  XIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useConversations } from "@/lib/hooks/useConversations";
 import { useChatStream } from "@/lib/hooks/useChatStream";
 import { useUserProfile } from "@/lib/hooks/useUserProfile";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   formatRelativeTime,
   groupConversationsByDate,
@@ -40,69 +41,58 @@ interface ModelOption {
   id: string;
   label: string;
   provider: string;
+  isFreemium?: boolean;
 }
 
-const AVAILABLE_MODELS: ModelOption[] = [
-  {
-    id: "gemini-1.5-flash-latest",
-    label: "Gemini 1.5 Flash",
-    provider: "google",
-  },
-  { id: "gemini-1.5-pro-latest", label: "Gemini 1.5 Pro", provider: "google" },
-  { id: "gpt-4o", label: "GPT-4o", provider: "openai" },
-  { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "openai" },
-  {
-    id: "claude-3-5-sonnet-20240620",
-    label: "Claude 3.5 Sonnet",
-    provider: "anthropic",
-  },
-  {
-    id: "claude-3-haiku-20240307",
-    label: "Claude 3 Haiku",
-    provider: "anthropic",
-  },
+const MODEL_OPTIONS: ModelOption[] = [
+  { id: "gpt-4o", label: "GPT-4o", provider: "OpenAI" },
+  { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "OpenAI", isFreemium: true },
+  { id: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet", provider: "Anthropic" },
+  { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku", provider: "Anthropic", isFreemium: true },
+  { id: "gemini-1.5-pro", label: "Gemini 1.5 Pro", provider: "Google" },
+  { id: "gemini-1.5-flash", label: "Gemini 1.5 Flash", provider: "Google", isFreemium: true },
 ];
 
-// This is a type predicate function. It tells TypeScript that if this function
-// returns true, the object's `created_at` property is guaranteed to be a string.
 function hasCreatedAt(
   c: ConversationWithLastMessage,
 ): c is ConversationWithLastMessage & { created_at: string } {
-  return c.created_at != null;
+  return typeof c.created_at === "string";
 }
 
 export default function ChatLayout() {
-  const router = useRouter();
-  const {
-    conversations,
-    loading,
-    error: convError,
-    refetch,
-    deleteConversation,
-    renameConversation,
-  } = useConversations();
-
-  const { profile, loading: loadingProfile } = useUserProfile();
-
   const [chatState, setChatState] = useState<ChatState>({ type: "home" });
-  const [input, setInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState("");
-  const [selectedModel, setSelectedModel] = useState(
-    AVAILABLE_MODELS[0]?.id || "",
-  );
-
+  const [selectedModel, setSelectedModel] = useState<string>("gpt-4o-mini");
+  const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [editingConversation, setEditingConversation] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const resizerRef = useRef<HTMLDivElement>(null);
+  
+  const router = useRouter();
+  const supabase = createClient();
+  
+  const { conversations, refetch, deleteConversation, renameConversation } = useConversations();
+  const { profile } = useUserProfile();
+  
   const {
-    messages,
-    setMessages,
-    isStreaming,
-    error: streamError,
     sendMessage,
+    isStreaming,
     stopStreaming,
+    messages: streamMessages,
+    setMessages: setStreamMessages,
+    error: streamError,
   } = useChatStream({
-    onConversationCreated: (newConversationId) => {
-      setChatState({ type: "existing", conversationId: newConversationId });
+    onConversationCreated: (conversationId) => {
+      setChatState({
+        type: "existing",
+        conversationId,
+      });
       refetch();
     },
     onMessageComplete: () => {
@@ -110,28 +100,71 @@ export default function ChatLayout() {
     },
   });
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      const newHeight = Math.min(textareaRef.current.scrollHeight, 120);
+      textareaRef.current.style.height = `${newHeight}px`;
+    }
+  }, [inputValue]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [streamMessages]);
 
+  // Sidebar resizing logic
   useEffect(() => {
-    if (chatState.type === "new") {
-      inputRef.current?.focus();
-    }
-  }, [chatState.type]);
+    const resizer = resizerRef.current;
+    const sidebar = sidebarRef.current;
+    
+    if (!resizer || !sidebar) return;
+
+    let isResizing = false;
+
+    const handleMouseDown = () => {
+      isResizing = true;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = Math.max(240, Math.min(600, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    resizer.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      resizer.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const handleSendMessage = async () => {
-    if (!input.trim() || isStreaming) return;
-    const prompt = input;
-    setInput("");
-    await sendMessage(
-      prompt,
-      chatState.type === "existing" ? chatState.conversationId : undefined,
-      selectedModel,
-    );
+    if (!inputValue.trim() || isStreaming) return;
+
+    const messageContent = inputValue.trim();
+    setInputValue("");
+
+    if (chatState.type === "home") {
+      setChatState({ type: "new" });
+      setStreamMessages([]);
+    }
+
+    await sendMessage(messageContent, chatState.conversationId, selectedModel);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -142,52 +175,40 @@ export default function ChatLayout() {
   };
 
   const handleLogout = async () => {
-    const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
   };
 
   const handleNewChat = () => {
-    setChatState({ type: "new" });
+    setChatState({ type: "home" });
     setMessages([]);
-    router.push("/");
+    setStreamMessages([]);
+    setInputValue("");
   };
 
-  const handleConversationClick = async (
-    conversation: ConversationWithLastMessage,
-  ) => {
+  const handleConversationClick = async (conversation: ConversationWithLastMessage) => {
     setChatState({
       type: "existing",
       conversationId: conversation.id,
-      conversation: conversation,
+      conversation,
     });
 
     try {
-      const response = await fetch(
-        `/api/conversations/${conversation.id}/messages`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch messages");
-      const fetchedMessages: Message[] = await response.json();
-      const formattedMessages = fetchedMessages.map((msg) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content,
-      }));
-      setMessages(formattedMessages);
-    } catch (err) {
-      console.error(err);
-      setMessages([
-        {
-          role: "assistant",
-          content: "Error: Could not load conversation history.",
-          isError: true,
-        },
-      ]);
+      const response = await fetch(`/api/conversations/${conversation.id}/messages`);
+      if (response.ok) {
+        const fetchedMessages = await response.json();
+        setMessages(fetchedMessages);
+        setStreamMessages(fetchedMessages);
+      }
+    } catch (error) {
+      console.error("Failed to fetch messages:", error);
     }
   };
 
   const handleBackToHome = () => {
     setChatState({ type: "home" });
+    setMessages([]);
+    setStreamMessages([]);
   };
 
   const handleDeleteConversation = async (conversationId: string) => {
@@ -196,299 +217,383 @@ export default function ChatLayout() {
       if (chatState.conversationId === conversationId) {
         handleBackToHome();
       }
-    } catch (err) {
-      console.error("Failed to delete conversation:", err);
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
     }
   };
 
   const handleRenameStart = (conversation: ConversationWithLastMessage) => {
-    setRenamingId(conversation.id);
-    setRenameValue(conversation.title ?? "");
+    setEditingConversation(conversation.id);
+    setEditTitle(conversation.title || "");
   };
 
   const handleRenameCancel = () => {
-    setRenamingId(null);
-    setRenameValue("");
+    setEditingConversation(null);
+    setEditTitle("");
   };
 
   const handleRenameSubmit = async (conversationId: string) => {
-    if (!renameValue.trim()) return;
+    if (!editTitle.trim()) return;
+
     try {
-      await renameConversation(conversationId, renameValue);
-      setRenamingId(null);
-    } catch (err) {
-      console.error("Failed to rename conversation:", err);
+      await renameConversation(conversationId, editTitle.trim());
+      setEditingConversation(null);
+      setEditTitle("");
+    } catch (error) {
+      console.error("Failed to update conversation title:", error);
     }
   };
 
-  const filteredConversations = conversations.filter((c) =>
-    (c.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  // THE FIX: Use the type predicate function in the filter.
-  // This tells TypeScript that the resulting array is safe to pass to the grouping function.
-  const groupedConversations = groupConversationsByDate(
-    filteredConversations.filter(hasCreatedAt),
-  );
-
-  const renderChatHeader = () => {
-    if (chatState.type === "existing" && chatState.conversation) {
-      return (
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={handleBackToHome}
-          >
-            <ArrowLeftIcon className="h-5 w-5" />
-          </Button>
-          <MessageSquareIcon className="h-6 w-6 text-text-secondary" />
-          <h2 className="text-lg font-semibold text-text-primary">
-            {chatState.conversation.title}
-          </h2>
-        </div>
-      );
-    }
-    if (chatState.type === "new") {
-      return (
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={handleBackToHome}
-          >
-            <ArrowLeftIcon className="h-5 w-5" />
-          </Button>
-          <PlusIcon className="h-6 w-6 text-text-secondary" />
-          <h2 className="text-lg font-semibold text-text-primary">New Chat</h2>
-        </div>
-      );
-    }
-    return null;
-  };
+  const filteredConversations = conversations.filter(hasCreatedAt);
+  const groupedConversations = groupConversationsByDate(filteredConversations);
 
   return (
-    <div className="flex h-screen w-full bg-surface-0 text-text-primary">
-      <aside
-        className={`surface-1 border-r border-primary flex-col ${
-          chatState.type !== "home" ? "hidden md:flex" : "flex"
-        } w-full md:w-80`}
-      >
-        <div className="flex h-16 items-center justify-between border-b border-primary p-4">
-          <h1 className="text-xl font-bold">R3Chat</h1>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <SettingsIcon className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOutIcon className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="p-4 space-y-4">
-          <Button className="w-full bg-accent" onClick={handleNewChat}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            New Chat
+    <div className="flex h-screen bg-surface-0">
+      {/* Top Navigation Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-14 bg-surface-1 border-b border-subtle flex items-center justify-between px-4">
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="h-9 w-9 rounded-full hover:bg-surface-2 icon-hover"
+          >
+            <MenuIcon className="h-5 w-5" />
           </Button>
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
-            <input
-              type="text"
-              placeholder="Search conversations..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="surface-0 w-full rounded-md border border-subtle pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent-primary"
-            />
-          </div>
+          
+          {chatState.type !== "home" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToHome}
+              className="h-9 w-9 rounded-full hover:bg-surface-2 icon-hover"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+            </Button>
+          )}
+          
+          <h1 className="text-lg font-semibold text-primary">
+            {chatState.type === "home"
+              ? "R3Chat"
+              : chatState.conversation?.title || "New Chat"}
+          </h1>
         </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {loading && <p>Loading...</p>}
-          {Object.entries(groupedConversations).map(([group, convs]) => (
-            <div key={group}>
-              <h3 className="text-xs font-semibold text-text-secondary mb-2 px-2">
-                {group}
-              </h3>
-              <ul className="space-y-1">
-                {convs.map((conversation) => (
-                  <li
-                    key={conversation.id}
-                    className={`group flex items-center justify-between rounded-md p-2 cursor-pointer hover:bg-surface-2 ${
-                      chatState.conversationId === conversation.id
-                        ? "bg-surface-2"
-                        : ""
-                    }`}
-                    onClick={() => handleConversationClick(conversation)}
-                  >
-                    {renamingId === conversation.id ? (
-                      <input
-                        type="text"
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter")
-                            handleRenameSubmit(conversation.id);
-                          if (e.key === "Escape") handleRenameCancel();
-                        }}
-                        onBlur={handleRenameCancel}
-                        autoFocus
-                        className="surface-0 w-full bg-transparent text-sm focus:outline-none"
-                      />
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-3 truncate">
-                          <MessageSquareIcon className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate text-sm">
-                            {conversation.title}
-                          </span>
-                        </div>
-                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRenameStart(conversation);
-                            }}
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteConversation(conversation.id);
-                            }}
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        
+        <div className="flex items-center space-x-2">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/settings")}
+            className="h-9 w-9 rounded-full hover:bg-surface-2 icon-hover"
+            title="Settings"
+          >
+            <SettingsIcon className="h-4 w-4 text-secondary" />
+          </Button>
         </div>
-      </aside>
+      </div>
 
-      <main
-        className={`flex flex-1 flex-col ${
-          chatState.type === "home" ? "hidden md:flex" : "flex"
+      {/* Sidebar */}
+      <div
+        ref={sidebarRef}
+        className={`relative flex-shrink-0 bg-surface-1 border-r border-subtle transition-all duration-200 mt-14 ${
+          sidebarCollapsed ? "w-0 -ml-1" : ""
         }`}
+        style={{ width: sidebarCollapsed ? 0 : `${sidebarWidth}px` }}
       >
-        {chatState.type === "home" && (
-          <div className="flex flex-col items-center justify-center h-full">
-            <h1 className="text-4xl font-bold">R3Chat</h1>
-            <p className="text-text-secondary">
-              Select a conversation or start a new one.
-            </p>
+        {!sidebarCollapsed && (
+          <div className="flex flex-col h-full">
+            {/* Sidebar Header */}
+            <div className="p-4 border-b border-subtle">
+              <Button
+                onClick={handleNewChat}
+                className="w-full btn-pill flex items-center justify-center"
+              >
+                <PlusIcon className="h-4 w-4" />
+                <span>New Chat</span>
+              </Button>
+            </div>
+
+            {/* Conversations List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {Object.entries(groupedConversations).map(([dateGroup, convos]) => (
+                <div key={dateGroup}>
+                  <h3 className="section-header">
+                    {dateGroup}
+                  </h3>
+                  <div className="space-y-1">
+                    {convos.map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className={`group relative rounded-lg p-3 cursor-pointer transition-all duration-200 hover:bg-surface-2 ${
+                          chatState.conversationId === conversation.id
+                            ? "bg-accent-primary text-white"
+                            : ""
+                        }`}
+                        onClick={() => handleConversationClick(conversation)}
+                      >
+                        {editingConversation === conversation.id ? (
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            onBlur={handleRenameCancel}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleRenameSubmit(conversation.id);
+                              } else if (e.key === "Escape") {
+                                handleRenameCancel();
+                              }
+                            }}
+                            className="w-full bg-transparent border-none outline-none text-sm font-medium"
+                            autoFocus
+                          />
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium truncate">
+                              {conversation.title || "New Chat"}
+                            </span>
+                            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRenameStart(conversation);
+                                }}
+                                className="h-6 w-6 rounded-full hover:bg-surface-0/20"
+                              >
+                                <PencilIcon className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteConversation(conversation.id);
+                                }}
+                                className="h-6 w-6 rounded-full hover:bg-red-500/20"
+                              >
+                                <TrashIcon className="h-3 w-3 text-red-400" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* User Profile - Moved to bottom */}
+            <div className="p-4 border-t border-subtle">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-subtle bg-surface-2">
+                  {profile?.email ? (
+                    <img
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.email)}&background=D2691E&color=fff&size=48`}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-primary">U</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-primary truncate">
+                    {profile?.email?.split("@")[0] || "User"}
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                      profile?.account_type === "guest" 
+                        ? "bg-surface-2 text-secondary" 
+                        : "bg-accent-primary text-white"
+                    }`}>
+                      {profile?.account_type === "guest" ? "Free" : "Pro"}
+                    </span>
+                    <span className="text-xs text-tertiary">
+                      {profile?.credits_left || 0} credits
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                className="w-full justify-start text-secondary hover:text-primary hover:bg-surface-2"
+                title="Sign out"
+              >
+                <LogOutIcon className="h-4 w-4 mr-3" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         )}
 
-        {(chatState.type === "new" || chatState.type === "existing") && (
-          <>
-            <div className="flex h-16 items-center border-b border-primary p-4">
-              {renderChatHeader()}
-            </div>
+        {/* Resizer */}
+        {!sidebarCollapsed && (
+          <div
+            ref={resizerRef}
+            className="sidebar-resizer absolute top-0 right-0 h-full"
+          />
+        )}
+      </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {messages.map((message, index) => (
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0 mt-14">
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto">
+          {chatState.type === "home" ? (
+            <div className="flex items-center justify-center h-full p-8">
+              <div className="text-center space-y-6 max-w-md">
+                <MessageSquareIcon className="h-16 w-16 text-accent-primary mx-auto" />
+                <div>
+                  <h2 className="text-2xl font-bold text-primary mb-4">
+                    Welcome to R3Chat
+                  </h2>
+                  <p className="text-secondary leading-relaxed">
+                    Start a conversation with our powerful AI models. 
+                    Choose your preferred model and begin chatting.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleNewChat}
+                  className="btn-pill px-8 py-3 text-lg"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  Start New Chat
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 space-y-6 pb-32">
+              {streamMessages.map((message, index) => (
                 <div
-                  key={index}
-                  className={`flex gap-4 ${
-                    message.role === "user" ? "justify-end" : ""
+                  key={message.id || index}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
                   <div
-                    className={`max-w-2xl rounded-lg p-4 ${
+                    className={`max-w-[75%] rounded-2xl px-6 py-4 ${
                       message.role === "user"
-                        ? "bg-accent text-white"
-                        : "surface-1"
+                        ? "message-user"
+                        : "message-assistant"
                     } ${message.isError ? "border border-red-500" : ""}`}
                   >
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <div className="whitespace-pre-wrap break-words leading-relaxed">
+                      {message.content}
+                    </div>
+                    {message.isStreaming && (
+                      <div className="inline-block w-2 h-5 bg-current animate-pulse ml-1" />
+                    )}
                   </div>
                 </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
+          )}
+        </div>
 
-            <div className="border-t border-primary p-4">
-              {streamError && (
-                <p className="text-center text-sm text-red-500 mb-2">
-                  Error: {streamError}
-                </p>
-              )}
-              <p className="text-center text-xs text-text-secondary mb-2">
-                Credits Left:{" "}
-                {loadingProfile ? "..." : profile?.credits_left ?? 0}
-              </p>
-              <div className="surface-1 relative mx-auto max-w-3xl rounded-lg border border-subtle">
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Type your message here..."
-                  className="surface-1 w-full resize-none rounded-lg bg-transparent p-4 pr-20 focus:outline-none"
-                  rows={1}
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="surface-0 rounded border border-subtle px-2 py-1 text-xs"
+        {/* Enhanced Input Area */}
+        <div className="fixed bottom-0 right-0 left-0 lg:left-auto lg:right-4 lg:bottom-4 lg:max-w-3xl lg:mx-auto p-4">
+          <div className="chatbox-translucent rounded-xl p-4 space-y-4">
+            {/* Main Input */}
+            <div className="relative">
+              <textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Type your message..."
+                disabled={isStreaming}
+                className="w-full resize-none border-0 bg-transparent text-primary placeholder-text-tertiary focus:outline-none focus:ring-0 pr-16 pb-12"
+                style={{ minHeight: '20px', maxHeight: '120px' }}
+                rows={1}
+              />
+            </div>
+            
+            {/* Bottom Controls */}
+            <div className="flex items-center justify-between pt-2 border-t border-subtle">
+              <div className="flex items-center space-x-3">
+                {/* Model Selector */}
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="bg-surface-2 border border-subtle rounded-lg px-3 py-2 text-sm font-medium text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
+                  disabled={isStreaming}
+                >
+                  {MODEL_OPTIONS.map((model) => (
+                    <option
+                      key={model.id}
+                      value={model.id}
+                      disabled={!model.isFreemium && profile?.account_type === "guest"}
+                    >
+                      {model.label}
+                      {!model.isFreemium && profile?.account_type === "guest" ? " (Pro)" : ""}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Attachment Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 rounded-full hover:bg-surface-2 icon-hover"
+                  title="Attach file (.txt, .md)"
+                >
+                  <PaperclipIcon className="h-4 w-4 text-tertiary" />
+                </Button>
+              </div>
+
+              {/* Send/Stop Button */}
+              <div className="flex items-center space-x-2">
+                {profile && (
+                  <span className="text-xs text-secondary">
+                    {profile.credits_left} credits
+                  </span>
+                )}
+                
+                {isStreaming ? (
+                  <Button
+                    onClick={stopStreaming}
+                    size="sm"
+                    className="h-9 w-9 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                    title="Stop generation"
                   >
-                    {AVAILABLE_MODELS.map((model) => (
-                      <option
-                        key={model.id}
-                        value={model.id}
-                        disabled={model.provider !== "google"}
-                        className={
-                          model.provider !== "google"
-                            ? "text-text-tertiary"
-                            : ""
-                        }
-                      >
-                        {model.label}{" "}
-                        {model.provider !== "google" && "(Coming Soon)"}
-                      </option>
-                    ))}
-                  </select>
-                  {isStreaming ? (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={stopStreaming}
-                    >
-                      <StopCircleIcon className="h-5 w-5" />
-                    </Button>
-                  ) : (
-                    <Button
-                      size="icon"
-                      className="bg-accent"
-                      onClick={handleSendMessage}
-                      disabled={
-                        !profile || (profile && profile.credits_left <= 0)
-                      }
-                    >
-                      <SendIcon className="h-5 w-5" />
-                    </Button>
-                  )}
-                </div>
+                    <StopCircleIcon className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim()}
+                    size="sm"
+                    className={`h-9 w-9 rounded-full transition-all duration-200 ${
+                      inputValue.trim()
+                        ? "bg-accent-primary hover:bg-accent-hover text-white hover:scale-105"
+                        : "bg-surface-2 text-tertiary cursor-not-allowed"
+                    }`}
+                    title="Send message"
+                  >
+                    <SendIcon className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
-          </>
-        )}
-      </main>
+
+            {/* Error Display */}
+            {streamError && (
+              <div className="text-sm text-red-400 bg-red-500/10 rounded-lg p-2">
+                {streamError}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

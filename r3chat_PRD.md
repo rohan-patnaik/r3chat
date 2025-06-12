@@ -118,3 +118,25 @@ R3Chat is a fast, beautiful, and privacy-respecting AI chat web application. It 
 ### Epic 5 – User-Managed API Keys
 *   `5.1` Create the settings page UI **(Moved to 4.4.3.1)**
 *   `5.2` Implement API key management (CRUD) **(Moved to 4.4.3.5, 4.4.3.6)**
+
+
+const AVAILABLE_MODELS: ModelOption[] = [
+  {
+    id: "gemini-1.5-flash-latest",
+    label: "Gemini 1.5 Flash",
+    provider: "google",
+  },
+  { id: 'gemini-2.5-flash-preview-05-20', label: 'Gemini 2.5 Flash', provider: 'google' },
+  { id: "gpt-4o", label: "GPT-4o", provider: "openai" },
+  { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "openai" },
+  {
+    id: "claude-3-5-sonnet-20240620",
+    label: "Claude 3.5 Sonnet",
+    provider: "anthropic",
+  },
+  {
+    id: "claude-3-haiku-20240307",
+    label: "Claude 3 Haiku",
+    provider: "anthropic",
+  },
+];

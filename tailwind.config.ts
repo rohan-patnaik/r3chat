@@ -1,66 +1,61 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: "class",
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
       colors: {
-        // Direct color definitions (Tailwind v4 compatible)
-        background: "#0E1117",
-        foreground: "#E5E7EB",
-        
-        // Surface colors
-        "surface-0": "#0E1117",
-        "surface-1": "#161B22",
-        
-        // Text colors
-        "text-primary": "#E5E7EB",
-        "text-secondary": "#9CA3AF",
-        
-        // Accent colors
-        "accent-500": "#D946EF",
-        "accent-600": "#C03FDD",
-        
-        // Border color
-        "border-subtle": "#333333",
-        
-        // Utility colors
-        destructive: {
-          DEFAULT: "#FF5656",
-          foreground: "#FFFFFF",
+        // Brown-based color system
+        surface: {
+          0: "var(--surface-0)",
+          1: "var(--surface-1)",
+          2: "var(--surface-2)",
         },
+        text: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          tertiary: "var(--text-tertiary)",
+        },
+        accent: {
+          primary: "var(--accent-primary)",
+          hover: "var(--accent-hover)",
+        },
+        border: {
+          subtle: "var(--border-subtle)",
+          primary: "var(--border-primary)",
+        },
+        // Status colors (theme-aware)
+        success: "var(--success)",
+        warning: "var(--warning)",
+        error: "var(--error)",
       },
-      borderRadius: {
-        lg: "0.5rem",
-        md: "0.3rem",
-        sm: "0.1rem",
-      },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fadeIn 0.3s ease-in-out",
+        "slide-in": "slideIn 0.2s ease-out",
+        "pulse-glow": "pulseGlow 2s ease-in-out infinite",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        slideIn: {
+          "0%": { transform: "translateY(-10px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        pulseGlow: {
+          "0%, 100%": { boxShadow: "0 0 5px var(--accent-primary)" },
+          "50%": { boxShadow: "0 0 20px var(--accent-primary)" },
+        },
       },
     },
   },
