@@ -5,8 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createProvider, generateTitle } from "@/lib/llm/providers";
 import { Database } from "@/lib/database.types";
 
-type Message = Database["public"]["Tables"]["messages"]["Row"];
-
 function getProviderFromModel(model: string): string {
   if (model.startsWith("gpt")) return "openai";
   if (model.startsWith("claude")) return "anthropic";
@@ -35,26 +33,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const providerName = getProviderFromModel(model);
-
-    const { data: providerKey, error: keyError } = await supabase
-      .from("provider_keys")
-      .select("api_key")
-      .eq("user_id", user.id)
-      .eq("provider", providerName)
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("credits_left") // Use the new column name
+      .eq("id", user.id)
       .single();
 
-    if (keyError || !providerKey) {
+    if (profileError || !profile) {
+      console.error("Profile fetch error:", profileError);
+      throw new Error("Could not find user profile.");
+    }
+
+    if (profile.credits_left <= 0) {
       return NextResponse.json(
-        {
-          error: `API key not found for provider: ${providerName}. Please check the database.`,
-        },
-        { status: 400 },
+        { error: "You have run out of credits. Please upgrade to Pro." },
+        { status: 403 },
       );
     }
 
-    // **THE FIX: Trim whitespace from the retrieved key**
-    const apiKey = providerKey.api_key.trim();
+    const newCredits = profile.credits_left - 1;
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ credits_left: newCredits }) // Use the new column name
+      .eq("id", user.id);
+
+    if (updateError) {
+      console.error("Credit decrement error:", updateError);
+      throw new Error("Could not update user credits.");
+    }
+
+    const providerName = getProviderFromModel(model);
+    let apiKey;
+    if (providerName === "google") {
+      apiKey = process.env.GOOGLE_API_KEY;
+    } else if (providerName === "openai") {
+      apiKey = process.env.OPENAI_API_KEY;
+    } else if (providerName === "anthropic") {
+      apiKey = process.env.ANTHROPIC_API_KEY;
+    }
+
+    if (!apiKey) {
+      throw new Error(`Master API key for ${providerName} is not configured.`);
+    }
 
     let conversationId = currentConversationId;
     let isFirstMessage = false;
@@ -106,7 +126,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the trimmed API key
     const provider = createProvider(providerName, apiKey);
 
     const stream = new ReadableStream({
@@ -145,7 +164,7 @@ export async function POST(request: NextRequest) {
               `data: ${JSON.stringify({
                 type: "error",
                 message:
-                  "The model returned an empty response. Check model name and API key permissions.",
+                  "The model returned an empty response. Please try again.",
               })}\n\n`,
             );
             controller.close();

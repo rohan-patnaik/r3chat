@@ -12,16 +12,15 @@ import {
   SearchIcon,
   SettingsIcon,
   LogOutIcon,
-  LoaderIcon,
   StopCircleIcon,
-  ChevronDownIcon,
-  TrashIcon,
   PencilIcon,
   ArrowLeftIcon,
+  TrashIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useConversations } from "@/lib/hooks/useConversations";
 import { useChatStream } from "@/lib/hooks/useChatStream";
+import { useUserProfile } from "@/lib/hooks/useUserProfile";
 import {
   formatRelativeTime,
   groupConversationsByDate,
@@ -37,7 +36,19 @@ interface ChatState {
   conversation?: ConversationWithLastMessage;
 }
 
-const AVAILABLE_MODELS = [
+interface ModelOption {
+  id: string;
+  label: string;
+  provider: string;
+}
+
+const AVAILABLE_MODELS: ModelOption[] = [
+  {
+    id: "gemini-1.5-flash-latest",
+    label: "Gemini 1.5 Flash",
+    provider: "google",
+  },
+  { id: "gemini-1.5-pro-latest", label: "Gemini 1.5 Pro", provider: "google" },
   { id: "gpt-4o", label: "GPT-4o", provider: "openai" },
   { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "openai" },
   {
@@ -50,17 +61,15 @@ const AVAILABLE_MODELS = [
     label: "Claude 3 Haiku",
     provider: "anthropic",
   },
-  {
-    id: "gemini-1.5-flash-latest",
-    label: "Gemini 1.5 Flash",
-    provider: "google",
-  },
-  {
-    id: "gemini-2.5-flash-preview-05-20",
-    label: "Gemini 2.5 Flash",
-    provider: "google",
-  },
 ];
+
+// This is a type predicate function. It tells TypeScript that if this function
+// returns true, the object's `created_at` property is guaranteed to be a string.
+function hasCreatedAt(
+  c: ConversationWithLastMessage,
+): c is ConversationWithLastMessage & { created_at: string } {
+  return c.created_at != null;
+}
 
 export default function ChatLayout() {
   const router = useRouter();
@@ -68,17 +77,21 @@ export default function ChatLayout() {
     conversations,
     loading,
     error: convError,
-    refetch, // FIX: Correct function name is refetch
+    refetch,
     deleteConversation,
     renameConversation,
   } = useConversations();
+
+  const { profile, loading: loadingProfile } = useUserProfile();
 
   const [chatState, setChatState] = useState<ChatState>({ type: "home" });
   const [input, setInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
-  const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[5].id);
+  const [selectedModel, setSelectedModel] = useState(
+    AVAILABLE_MODELS[0]?.id || "",
+  );
 
   const {
     messages,
@@ -90,10 +103,10 @@ export default function ChatLayout() {
   } = useChatStream({
     onConversationCreated: (newConversationId) => {
       setChatState({ type: "existing", conversationId: newConversationId });
-      refetch(); // FIX: Correct function name is refetch
+      refetch();
     },
     onMessageComplete: () => {
-      refetch(); // FIX: Correct function name is refetch
+      refetch();
     },
   });
 
@@ -190,7 +203,7 @@ export default function ChatLayout() {
 
   const handleRenameStart = (conversation: ConversationWithLastMessage) => {
     setRenamingId(conversation.id);
-    setRenameValue(conversation.title);
+    setRenameValue(conversation.title ?? "");
   };
 
   const handleRenameCancel = () => {
@@ -209,9 +222,14 @@ export default function ChatLayout() {
   };
 
   const filteredConversations = conversations.filter((c) =>
-    c.title.toLowerCase().includes(searchQuery.toLowerCase()),
+    (c.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
-  const groupedConversations = groupConversationsByDate(filteredConversations);
+
+  // THE FIX: Use the type predicate function in the filter.
+  // This tells TypeScript that the resulting array is safe to pass to the grouping function.
+  const groupedConversations = groupConversationsByDate(
+    filteredConversations.filter(hasCreatedAt),
+  );
 
   const renderChatHeader = () => {
     if (chatState.type === "existing" && chatState.conversation) {
@@ -404,6 +422,15 @@ export default function ChatLayout() {
             </div>
 
             <div className="border-t border-primary p-4">
+              {streamError && (
+                <p className="text-center text-sm text-red-500 mb-2">
+                  Error: {streamError}
+                </p>
+              )}
+              <p className="text-center text-xs text-text-secondary mb-2">
+                Credits Left:{" "}
+                {loadingProfile ? "..." : profile?.credits_left ?? 0}
+              </p>
               <div className="surface-1 relative mx-auto max-w-3xl rounded-lg border border-subtle">
                 <textarea
                   ref={inputRef}
@@ -421,8 +448,18 @@ export default function ChatLayout() {
                     className="surface-0 rounded border border-subtle px-2 py-1 text-xs"
                   >
                     {AVAILABLE_MODELS.map((model) => (
-                      <option key={model.id} value={model.id}>
-                        {model.label}
+                      <option
+                        key={model.id}
+                        value={model.id}
+                        disabled={model.provider !== "google"}
+                        className={
+                          model.provider !== "google"
+                            ? "text-text-tertiary"
+                            : ""
+                        }
+                      >
+                        {model.label}{" "}
+                        {model.provider !== "google" && "(Coming Soon)"}
                       </option>
                     ))}
                   </select>
@@ -439,6 +476,9 @@ export default function ChatLayout() {
                       size="icon"
                       className="bg-accent"
                       onClick={handleSendMessage}
+                      disabled={
+                        !profile || (profile && profile.credits_left <= 0)
+                      }
                     >
                       <SendIcon className="h-5 w-5" />
                     </Button>
