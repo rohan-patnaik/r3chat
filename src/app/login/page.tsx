@@ -34,7 +34,7 @@ export default function LoginPage() {
     <div className="min-h-screen surface-0 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Welcome to T3.chat</h1>
+          <h1 className="text-3xl font-bold text-primary mb-2">Welcome to R3.chat</h1>
           <p className="text-secondary">Sign in to continue your conversations</p>
         </div>
 

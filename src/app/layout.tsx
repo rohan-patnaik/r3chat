@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "T3.chat - AI Chat Interface",
+  title: "R3.chat",
   description: "A fast, privacy-respecting AI chat web-app",
 };
 

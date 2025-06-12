@@ -1,7 +1,4 @@
-# R3Chat - Product Requirements Document (Updated)
-
-**Created:** 6/11/2025, 9:29:53 PM
-**Last Updated:** 6/12/2025, 4:11:03 AM
+# R3Chat - Product Requirements Document 
 
 ## 1. Product Vision & Goal
 
@@ -10,16 +7,10 @@ R3Chat is a fast, beautiful, and privacy-respecting AI chat web application. It 
 ## 2. Key Features & Scope
 
 ### 2.1. Theming & UI
-*   **Dark Theme:** A visually appealing dark theme with dark blue surfaces and a vibrant magenta accent for key interactive elements.
-*   **Color Palette:**
-    *   `surface-0`: `#0E1117` (page background)
-    *   `surface-1`: `#161B22` (cards, sidebars)
-    *   `accent-500`: `#D946EF` (CTAs, toggles, progress)
-    *   `accent-600`: `#C03FDD` (hover)
-    *   `text-primary`: `#E5E7EB`
-    *   `text-secondary`: `#9CA3AF`
-    *   `border-subtle`: `#333333`
+*   **Color Palette:** (Will be updated with specific brown-based colors)
 *   **Responsive Design:** The layout should be optimized for desktop use.
+*   **Dual Theme Support:** Dark and light brown themes.
+*   **Theme Toggle:** Sun/moon icon on the top-right of the chat space.
 
 ### 2.2. Authentication
 *   **Provider:** Google OAuth via Supabase Auth.
@@ -39,27 +30,29 @@ R3Chat is a fast, beautiful, and privacy-respecting AI chat web application. It 
     *   Users will be able to manually rename conversations.
 *   **Delete Conversation:** Users can delete conversations they no longer need.
 
-### 2.4. Messaging
+### 2.4. Messaging & Freemium Model
 *   **Send/Receive:** Users can send messages and receive responses from the selected AI model.
-*   **Streaming:** AI responses should be streamed token-by-token for a real-time feel.
-*   **Model Selection:** Users can select from a list of available models (e.g., Gemini, GPT-4, Claude) for each conversation.
+*   **Streaming:** AI responses are streamed token-by-token for a real-time feel.
+*   **Model Selection:** Users can select from a list of available models. Non-freemium models are disabled for guest users.
+*   **Credit System:** New users automatically receive 10 credits. Each message costs 1 credit. The UI displays the remaining credits in real-time.
 
-### 2.5. Settings
-*   **API Key Management:** Users can securely add and manage their API keys for different AI providers.
+### 2.5. Settings & Profile Management
+*   **API Key Management:** Users can securely add and manage their API keys for different AI providers to bypass the credit system.
+*   **Profile Editing:** Users can edit their display name and upload an avatar.
+*   **Subscription Management:** Link to a placeholder credit card page.
+*   **Message Usage Tracking:** Panel with progress bars (Standard: 10, Premium: 5).
 
 ## 3. Technical Stack
 *   **Framework:** Next.js 15+ (App Router)
 *   **Language:** TypeScript
 *   **Styling:** Tailwind CSS v4, shadcn/ui
-*   **Backend & Database:** Supabase (PostgreSQL)
-*   **Authentication:** Supabase Auth
+*   **Backend & Database:** Supabase (PostgreSQL, Realtime)
 *   **Deployment:** Vercel
 
 ## 4. Out of Scope (for v1)
-*   Light theme
-*   Mobile-first responsive design
 *   Team collaboration features
-*   File uploads
+*   Actual payment processing for subscriptions.
+*   Advanced admin dashboards (beyond profile management).
 
 ## 5. Development Roadmap & Status
 
@@ -79,11 +72,49 @@ R3Chat is a fast, beautiful, and privacy-respecting AI chat web application. It 
 *   `3.3` Delete conversations **(Done)**
 *   `3.4` Update conversation title (manual rename) **(Done)**
 
-### Epic 4 – Messaging
+### Epic 4 – Messaging & Freemium
 *   `4.1` Send a message and get a non-streamed response **(Done)**
 *   `4.2` Implement streaming responses from the AI model **(Done)**
-*   `4.3` Add model selection dropdown functionality **(Next)**
+*   `4.3` Implement freemium credit system **(Done)**
+*   **`4.4` UI/UX Enhancements & Settings (In Progress)**
+    *   `4.4.1` **Sidebar & Layout Improvements**
+        *   `4.4.1.1` Center-align the "R3Chat" title in the sidebar.
+        *   `4.4.1.2` Sidebar toggle button always on the top-left (remains in place whether open or closed).
+        *   `4.4.1.3` Sidebar width is adjustable (resizable).
+        *   `4.4.1.4` Sidebar can be collapsed/expanded.
+        *   `4.4.1.5` "+ New Chat" button styled as a light blue (now brown theme) pill for contrast.
+        *   `4.4.1.6` Each chat in the sidebar only shows a title (max 4 words), no subtitle, with reduced height.
+        *   `4.4.1.7` User profile (avatar, name, plan badge) shown at the bottom center of the sidebar.
+    *   `4.4.2` **Welcome & Chat UI Enhancements**
+        *   `4.4.2.1` Welcome page "+ Start New Chat" button is a pill-shaped, high-contrast button.
+        *   `4.4.2.2` Model selection dropdown uses the latest list of models (GPT-4o, Claude, Gemini, etc.).
+        *   `4.4.2.3` Model name in dropdown is bold and matches sidebar button text size.
+        *   `4.4.2.4` Model selector and send button are visually aligned and styled.
+        *   `4.4.2.5` Send button is light blue (now brown theme) when enabled, greyed out when disabled.
+        *   `4.4.2.6` Chat input field only shows a scrollbar if input is 2+ lines.
+        *   `4.4.2.7` Attach button (pin icon) in chat input for .txt and .md files, with tooltip.
+        *   `4.4.2.8` Attach and send buttons are vertically stacked for a sleek look.
+    *   `4.4.3` **Settings & Profile Management**
+        *   `4.4.3.1` Settings page is a two-column layout, matching the provided design.
+        *   `4.4.3.2` Settings page tabs: Account, Models, API Keys, etc.
+        *   `4.4.3.3` "Manage Subscription" is a button that links to a placeholder credit card page.
+        *   `4.4.3.4` "Models" tab: Scrollable list of available models, each with a 1-line energetic description.
+        *   `4.4.3.5` "API Keys" tab: Static fields for OpenAI, Claude, and Gemini keys (no "+ Add New Key").
+        *   `4.4.3.6` API keys can be updated inline.
+        *   `4.4.3.7` Profile section: User can edit their display name and upload an avatar.
+        *   `4.4.3.8` User’s chosen name, avatar, and plan badge ("Pro" or "User") shown in sidebar.
+        *   `4.4.3.9` "Message Usage" panel uses progress bars (Standard: 10, Premium: 5).
+        *   `4.4.3.10` "Buy more creds coz AI aint cheap" shown in two lines in the usage panel.
+    *   `4.4.4` **Theme & Colors**
+        *   `4.4.4.1` Entire app uses a brown-based color palette (dark and light brown for contrast).
+        *   `4.4.4.2` Dual theme support: dark and light brown themes.
+        *   `4.4.4.3` Theme toggle icon (sun/moon) on the top-right of the chat space.
+        *   `4.4.4.4` Settings icon is also on the top-right, close to the theme toggle.
+    *   `4.4.5` **Other UI/UX**
+        *   `4.4.5.1` Settings and sign out buttons in the sidebar have tooltips on hover.
+        *   `4.4.5.2` Sidebar and main layout are optimized for desktop.
+        *   `4.4.5.3` All content rendering (markdown, code blocks, etc.) is visually polished.
 
-### Epic 5 – Settings
-*   `5.1` Create the settings page UI
-*   `5.2` Implement API key management (CRUD)
+### Epic 5 – User-Managed API Keys
+*   `5.1` Create the settings page UI **(Moved to 4.4.3.1)**
+*   `5.2` Implement API key management (CRUD) **(Moved to 4.4.3.5, 4.4.3.6)**
