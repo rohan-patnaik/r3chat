@@ -1,20 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useUserProfile } from "@/lib/hooks/useUserProfile";
 import {
   UserIcon,
   CpuIcon,
   KeyIcon,
-  CreditCardIcon,
   BarChart3Icon,
   ArrowLeftIcon,
   UploadIcon,
   CheckIcon,
   ExternalLinkIcon,
+  CreditCardIcon,
+  EyeIcon,
+  EyeOffIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 type Tab = "account" | "models" | "apikeys" | "usage";
 
@@ -77,8 +80,28 @@ export default function SettingsPage() {
     claude: "",
     gemini: "",
   });
+  const [savedApiKeys, setSavedApiKeys] = useState({
+    openai: false,
+    claude: false,
+    gemini: false,
+  });
+  const [showApiKeys, setShowApiKeys] = useState({
+    openai: false,
+    claude: false,
+    gemini: false,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  
   const { profile } = useUserProfile();
   const router = useRouter();
+  const supabase = createClient();
+
+  // Set display name to email by default
+  useEffect(() => {
+    if (profile?.email && !displayName) {
+      setDisplayName(profile.email.split("@")[0]);
+    }
+  }, [profile, displayName]);
 
   const tabs = [
     { id: "account" as Tab, label: "Account", icon: UserIcon },
@@ -87,53 +110,91 @@ export default function SettingsPage() {
     { id: "usage" as Tab, label: "Usage", icon: BarChart3Icon },
   ];
 
-  const handleSaveProfile = () => {
-    console.log("Saving profile:", { displayName });
+  const handleSaveProfile = async () => {
+    if (!displayName.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      // Update display name in database
+      const { error } = await supabase
+        .from('profiles')
+        .update({ display_name: displayName.trim() })
+        .eq('id', profile?.id);
+        
+      if (error) throw error;
+      
+      console.log("Profile updated successfully");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSaveApiKey = (provider: keyof typeof apiKeys) => {
-    console.log(`Saving ${provider} API key`);
+  const handleSaveApiKey = async (provider: keyof typeof apiKeys) => {
+    const key = apiKeys[provider];
+    if (!key.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      // Save API key to database
+      const { error } = await supabase
+        .from('provider_keys')
+        .upsert({
+          user_id: profile?.id,
+          provider: provider,
+          api_key: key.trim(),
+        });
+        
+      if (error) throw error;
+      
+      setSavedApiKeys(prev => ({ ...prev, [provider]: true }));
+      setShowApiKeys(prev => ({ ...prev, [provider]: false }));
+      console.log(`${provider} API key saved successfully`);
+    } catch (error) {
+      console.error(`Error saving ${provider} API key:`, error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleManageSubscription = () => {
     window.open("https://example.com/billing", "_blank");
   };
 
+  const toggleApiKeyVisibility = (provider: keyof typeof showApiKeys) => {
+    setShowApiKeys(prev => ({ ...prev, [provider]: !prev[provider] }));
+  };
+
   return (
     <div className="min-h-screen bg-surface-0">
       {/* Header */}
-      <div className="border-b border-subtle bg-surface-1">
-        <div className="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.back()}
-              className="h-10 w-10 rounded-full hover:bg-surface-2 icon-hover"
-            >
-              <ArrowLeftIcon className="h-5 w-5" />
-            </Button>
-            <h1 className="text-3xl font-bold text-primary">Settings</h1>
-          </div>
+      <div className="settings-header">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="h-10 w-10 p-0 btn-ghost icon-hover"
+          >
+            <ArrowLeftIcon className="h-5 w-5" />
+          </Button>
+          <h1 className="text-3xl font-bold text-primary">Settings</h1>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="settings-container">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
-            <nav className="space-y-2 sticky top-8">
+            <nav className="settings-nav sticky top-8">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-5 py-4 rounded-xl text-left transition-all duration-200 font-medium ${
-                      activeTab === tab.id
-                        ? "bg-accent-primary text-white shadow-lg"
-                        : "text-secondary hover:bg-surface-2 hover:text-primary"
-                    }`}
+                    className={`settings-nav-item ${activeTab === tab.id ? 'active' : ''}`}
                   >
                     <Icon className="h-5 w-5" />
                     <span>{tab.label}</span>
@@ -146,116 +207,118 @@ export default function SettingsPage() {
           {/* Main Content */}
           <div className="lg:col-span-4">
             {activeTab === "account" && (
-              <div className="space-y-8">
-                <div className="settings-section">
-                  <h2 className="text-2xl font-bold text-primary mb-8">
-                    Account Settings
-                  </h2>
+              <div className="settings-section animate-fade-in">
+                <h2 className="text-2xl font-bold text-primary mb-8">
+                  Account Settings
+                </h2>
 
-                  {/* Profile Section */}
-                  <div className="settings-form-group">
-                    <h3 className="text-xl font-semibold text-primary mb-6">
-                      Profile
-                    </h3>
-                    
-                    <div className="flex items-start space-x-8">
-                      <div className="relative">
-                        <div className="w-32 h-32 rounded-full overflow-hidden border-3 border-subtle bg-surface-2 shadow-lg">
-                          {profile?.email ? (
-                            <img
-                              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.email)}&background=D2691E&color=fff&size=128`}
-                              alt="Profile"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <UserIcon className="h-12 w-12 text-tertiary" />
-                            </div>
-                          )}
-                        </div>
-                        <button className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-accent-primary hover:bg-accent-hover text-white flex items-center justify-center transition-all icon-hover shadow-lg">
-                          <UploadIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                      
-                      <div className="flex-1 space-y-6">
-                        <div>
-                          <label className="settings-label">
-                            Display Name
-                          </label>
-                          <input
-                            type="text"
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
-                            placeholder={profile?.email || "Enter your name"}
-                            className="input-field text-lg"
+                {/* Profile Section */}
+                <div className="settings-form-group">
+                  <h3 className="text-xl font-semibold text-primary mb-6">
+                    Profile
+                  </h3>
+                  
+                  <div className="flex items-start space-x-8">
+                    <div className="relative">
+                      <div className="w-32 h-32 rounded-full overflow-hidden border-3 border-subtle bg-surface-2 shadow-lg">
+                        {profile?.email ? (
+                          <img
+                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.email)}&background=D2691E&color=fff&size=128`}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
                           />
-                        </div>
-                        <div>
-                          <label className="settings-label">
-                            Email Address
-                          </label>
-                          <input
-                            type="email"
-                            value={profile?.email || ""}
-                            disabled
-                            className="input-field text-lg bg-surface-2 text-tertiary"
-                          />
-                          <p className="text-sm text-tertiary mt-2">
-                            Email address cannot be changed as it's linked to your Google account.
-                          </p>
-                        </div>
-                        <Button
-                          onClick={handleSaveProfile}
-                          className="btn-pill px-8 py-3"
-                        >
-                          Save Changes
-                        </Button>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <UserIcon className="h-12 w-12 text-tertiary" />
+                          </div>
+                        )}
                       </div>
+                      <button className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-accent-primary hover:bg-accent-hover text-white flex items-center justify-center transition-all icon-hover shadow-lg">
+                        <UploadIcon className="h-5 w-5" />
+                      </button>
                     </div>
-                  </div>
-
-                  {/* Subscription Section */}
-                  <div className="settings-form-group pt-8 border-t border-subtle">
-                    <h3 className="text-xl font-semibold text-primary mb-6">
-                      Subscription
-                    </h3>
-                    <div className="flex items-center justify-between p-8 bg-surface-2 rounded-2xl border border-subtle shadow-sm">
+                    
+                    <div className="flex-1 space-y-6">
                       <div>
-                        <p className="font-bold text-primary text-xl">
-                          Current Plan: {profile?.account_type === "guest" ? "Free" : "Pro"}
+                        <label className="settings-label">
+                          Display Name
+                        </label>
+                        <input
+                          type="text"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="Enter your display name"
+                          className="input-field"
+                        />
+                        <p className="text-xs text-muted mt-2">
+                          This name will be displayed in your profile section.
                         </p>
-                        <p className="text-secondary mt-2 text-lg">
-                          {profile?.credits_left} credits remaining
-                        </p>
-                        <p className="text-tertiary text-sm mt-1">
-                          {profile?.account_type === "guest" 
-                            ? "Upgrade to Pro for unlimited credits and premium features"
-                            : "Thank you for being a Pro subscriber!"
-                          }
+                      </div>
+                      <div>
+                        <label className="settings-label">
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          value={profile?.email || ""}
+                          disabled
+                          className="input-field"
+                        />
+                        <p className="text-xs text-muted mt-2">
+                          Email address cannot be changed as it's linked to your Google account.
                         </p>
                       </div>
                       <Button
-                        onClick={handleManageSubscription}
-                        className="btn-pill flex items-center space-x-2 px-6 py-3"
+                        onClick={handleSaveProfile}
+                        disabled={isLoading || !displayName.trim()}
+                        className="btn-primary"
                       >
-                        <CreditCardIcon className="h-5 w-5" />
-                        <span>Manage Subscription</span>
-                        <ExternalLinkIcon className="h-4 w-4" />
+                        {isLoading ? "Saving..." : "Save Changes"}
                       </Button>
                     </div>
+                  </div>
+                </div>
+
+                {/* Subscription Section */}
+                <div className="settings-form-group pt-8 border-t border-subtle">
+                  <h3 className="text-xl font-semibold text-primary mb-6">
+                    Subscription
+                  </h3>
+                  <div className="flex items-center justify-between p-8 bg-surface-2 rounded-2xl border border-subtle shadow-sm">
+                    <div>
+                      <p className="font-bold text-primary text-xl">
+                        Current Plan: {profile?.account_type === "guest" ? "Free" : "Pro"}
+                      </p>
+                      <p className="text-secondary mt-2 text-lg">
+                        {profile?.credits_left} credits remaining
+                      </p>
+                      <p className="text-muted text-sm mt-1">
+                        {profile?.account_type === "guest" 
+                          ? "Upgrade to Pro for unlimited credits and premium features"
+                          : "Thank you for being a Pro subscriber!"
+                        }
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleManageSubscription}
+                      className="btn-primary flex items-center space-x-2"
+                    >
+                      <CreditCardIcon className="h-5 w-5" />
+                      <span>Manage Subscription</span>
+                      <ExternalLinkIcon className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
             )}
 
             {activeTab === "models" && (
-              <div className="settings-section">
+              <div className="settings-section animate-fade-in">
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold text-primary mb-3">
                     Available Models
                   </h2>
-                  <p className="settings-description text-lg">
+                  <p className="settings-description">
                     Choose from our selection of cutting-edge AI models. Each model has unique capabilities and strengths for different use cases.
                   </p>
                 </div>
@@ -276,10 +339,10 @@ export default function SettingsPage() {
                               {model.provider}
                             </span>
                             {model.enabled && (
-                              <CheckIcon className="h-6 w-6 text-green-500" />
+                              <CheckIcon className="h-6 w-6 text-success" />
                             )}
                           </div>
-                          <p className="text-secondary leading-relaxed mb-4 text-base">
+                          <p className="text-secondary leading-relaxed mb-4">
                             {model.description}
                           </p>
                           <div className="flex flex-wrap gap-2">
@@ -301,12 +364,12 @@ export default function SettingsPage() {
             )}
 
             {activeTab === "apikeys" && (
-              <div className="settings-section">
+              <div className="settings-section animate-fade-in">
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold text-primary mb-3">
                     API Keys
                   </h2>
-                  <p className="settings-description text-lg">
+                  <p className="settings-description">
                     Add your API keys to use your own credits and bypass rate limits. Your keys are encrypted and stored securely using industry-standard encryption.
                   </p>
                 </div>
@@ -314,81 +377,123 @@ export default function SettingsPage() {
                 <div className="space-y-8">
                   {/* OpenAI */}
                   <div className="settings-form-group">
-                    <label className="settings-label text-lg">
+                    <label className="settings-label">
                       OpenAI API Key
                     </label>
-                    <p className="text-sm text-tertiary mb-4">
+                    <p className="text-sm text-muted mb-4">
                       Used for GPT-4o and GPT-4o Mini models. Get your API key from the OpenAI dashboard.
                     </p>
                     <div className="flex space-x-4">
-                      <input
-                        type="password"
-                        value={apiKeys.openai}
-                        onChange={(e) =>
-                          setApiKeys((prev) => ({ ...prev, openai: e.target.value }))
-                        }
-                        placeholder="sk-..."
-                        className="input-field flex-1 text-lg"
-                      />
+                      <div className="relative flex-1">
+                        <input
+                          type={showApiKeys.openai ? "text" : "password"}
+                          value={apiKeys.openai}
+                          onChange={(e) =>
+                            setApiKeys((prev) => ({ ...prev, openai: e.target.value }))
+                          }
+                          placeholder={savedApiKeys.openai ? "••••••••••••••••" : "sk-..."}
+                          className="input-field pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleApiKeyVisibility("openai")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 btn-ghost p-1"
+                        >
+                          {showApiKeys.openai ? (
+                            <EyeOffIcon className="h-4 w-4" />
+                          ) : (
+                            <EyeIcon className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                       <Button
                         onClick={() => handleSaveApiKey("openai")}
-                        className="btn-pill px-8"
+                        disabled={isLoading || !apiKeys.openai.trim()}
+                        className="btn-primary"
                       >
-                        Save
+                        {isLoading ? "Saving..." : "Save"}
                       </Button>
                     </div>
                   </div>
 
                   {/* Claude */}
                   <div className="settings-form-group">
-                    <label className="settings-label text-lg">
+                    <label className="settings-label">
                       Claude API Key
                     </label>
-                    <p className="text-sm text-tertiary mb-4">
+                    <p className="text-sm text-muted mb-4">
                       Used for Claude 3.5 Sonnet and Haiku models. Get your API key from the Anthropic console.
                     </p>
                     <div className="flex space-x-4">
-                      <input
-                        type="password"
-                        value={apiKeys.claude}
-                        onChange={(e) =>
-                          setApiKeys((prev) => ({ ...prev, claude: e.target.value }))
-                        }
-                        placeholder="sk-ant-..."
-                        className="input-field flex-1 text-lg"
-                      />
+                      <div className="relative flex-1">
+                        <input
+                          type={showApiKeys.claude ? "text" : "password"}
+                          value={apiKeys.claude}
+                          onChange={(e) =>
+                            setApiKeys((prev) => ({ ...prev, claude: e.target.value }))
+                          }
+                          placeholder={savedApiKeys.claude ? "••••••••••••••••" : "sk-ant-..."}
+                          className="input-field pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleApiKeyVisibility("claude")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 btn-ghost p-1"
+                        >
+                          {showApiKeys.claude ? (
+                            <EyeOffIcon className="h-4 w-4" />
+                          ) : (
+                            <EyeIcon className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                       <Button
                         onClick={() => handleSaveApiKey("claude")}
-                        className="btn-pill px-8"
+                        disabled={isLoading || !apiKeys.claude.trim()}
+                        className="btn-primary"
                       >
-                        Save
+                        {isLoading ? "Saving..." : "Save"}
                       </Button>
                     </div>
                   </div>
 
                   {/* Gemini */}
                   <div className="settings-form-group">
-                    <label className="settings-label text-lg">
+                    <label className="settings-label">
                       Gemini API Key
                     </label>
-                    <p className="text-sm text-tertiary mb-4">
+                    <p className="text-sm text-muted mb-4">
                       Used for Gemini 1.5 Pro and Flash models. Get your API key from Google AI Studio.
                     </p>
                     <div className="flex space-x-4">
-                      <input
-                        type="password"
-                        value={apiKeys.gemini}
-                        onChange={(e) =>
-                          setApiKeys((prev) => ({ ...prev, gemini: e.target.value }))
-                        }
-                        placeholder="AIza..."
-                        className="input-field flex-1 text-lg"
-                      />
+                      <div className="relative flex-1">
+                        <input
+                          type={showApiKeys.gemini ? "text" : "password"}
+                          value={apiKeys.gemini}
+                          onChange={(e) =>
+                            setApiKeys((prev) => ({ ...prev, gemini: e.target.value }))
+                          }
+                          placeholder={savedApiKeys.gemini ? "••••••••••••••••" : "AIza..."}
+                          className="input-field pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleApiKeyVisibility("gemini")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 btn-ghost p-1"
+                        >
+                          {showApiKeys.gemini ? (
+                            <EyeOffIcon className="h-4 w-4" />
+                          ) : (
+                            <EyeIcon className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                       <Button
                         onClick={() => handleSaveApiKey("gemini")}
-                        className="btn-pill px-8"
+                        disabled={isLoading || !apiKeys.gemini.trim()}
+                        className="btn-primary"
                       >
-                        Save
+                        {isLoading ? "Saving..." : "Save"}
                       </Button>
                     </div>
                   </div>
@@ -397,12 +502,12 @@ export default function SettingsPage() {
             )}
 
             {activeTab === "usage" && (
-              <div className="settings-section">
+              <div className="settings-section animate-fade-in">
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold text-primary mb-3">
                     Message Usage
                   </h2>
-                  <p className="settings-description text-lg">
+                  <p className="settings-description">
                     Track your API usage across different tiers and manage your subscription to ensure uninterrupted access.
                   </p>
                 </div>
@@ -413,14 +518,19 @@ export default function SettingsPage() {
                     <div className="space-y-8">
                       <div>
                         <div className="flex items-center justify-between mb-4">
-                          <span className="font-semibold text-primary text-lg">
-                            Standard Messages
-                          </span>
-                          <span className="text-base text-secondary font-mono">
+                          <div>
+                            <h4 className="font-semibold text-primary text-lg">
+                              Standard Messages
+                            </h4>
+                            <p className="text-sm text-muted">
+                              Free tier includes basic models like GPT-4o Mini and Claude Haiku
+                            </p>
+                          </div>
+                          <span className="text-lg text-secondary font-mono">
                             {10 - (profile?.credits_left || 0)}/10
                           </span>
                         </div>
-                        <div className="progress-bar h-3">
+                        <div className="progress-bar">
                           <div
                             className="progress-fill"
                             style={{
@@ -428,40 +538,39 @@ export default function SettingsPage() {
                             }}
                           />
                         </div>
-                        <p className="text-sm text-tertiary mt-2">
-                          Free tier includes basic models like GPT-4o Mini and Claude Haiku
-                        </p>
                       </div>
 
                       <div>
                         <div className="flex items-center justify-between mb-4">
-                          <span className="font-semibold text-primary text-lg">
-                            Premium Messages
-                          </span>
-                          <span className="text-base text-secondary font-mono">0/5</span>
+                          <div>
+                            <h4 className="font-semibold text-primary text-lg">
+                              Premium Messages
+                            </h4>
+                            <p className="text-sm text-muted">
+                              Premium models like GPT-4o and Claude Sonnet (Pro subscription required)
+                            </p>
+                          </div>
+                          <span className="text-lg text-secondary font-mono">0/5</span>
                         </div>
-                        <div className="progress-bar h-3">
+                        <div className="progress-bar">
                           <div className="progress-fill" style={{ width: "0%" }} />
                         </div>
-                        <p className="text-sm text-tertiary mt-2">
-                          Premium models like GPT-4o and Claude Sonnet (Pro subscription required)
-                        </p>
                       </div>
 
                       <div className="pt-6 border-t border-subtle text-center space-y-4">
                         <div>
-                          <p className="text-lg font-medium text-primary">
+                          <p className="text-lg font-semibold text-primary">
                             Buy more creds
                           </p>
-                          <p className="text-lg font-medium text-primary">
+                          <p className="text-lg font-semibold text-primary">
                             coz AI ain't cheap
                           </p>
                         </div>
                         <Button
                           onClick={handleManageSubscription}
-                          className="btn-pill px-8 py-3"
+                          className="btn-primary"
                         >
-                          <CreditCardIcon className="h-5 w-5" />
+                          <CreditCardIcon className="h-5 w-5 mr-2" />
                           Upgrade Plan
                         </Button>
                       </div>

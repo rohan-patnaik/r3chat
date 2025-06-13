@@ -69,18 +69,21 @@ export type Database = {
         Row: {
           account_type: string
           credits_left: number
+          display_name: string | null
           email: string | null
           id: string
         }
         Insert: {
           account_type?: string
           credits_left?: number
+          display_name?: string | null
           email?: string | null
           id: string
         }
         Update: {
           account_type?: string
           credits_left?: number
+          display_name?: string | null
           email?: string | null
           id?: string
         }

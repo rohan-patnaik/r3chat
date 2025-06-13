@@ -11,11 +11,9 @@ import {
   LogOutIcon,
   StopCircleIcon,
   PencilIcon,
-  ArrowLeftIcon,
   TrashIcon,
   PaperclipIcon,
   MenuIcon,
-  XIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useConversations } from "@/lib/hooks/useConversations";
@@ -205,17 +203,13 @@ export default function ChatLayout() {
     }
   };
 
-  const handleBackToHome = () => {
-    setChatState({ type: "home" });
-    setMessages([]);
-    setStreamMessages([]);
-  };
-
   const handleDeleteConversation = async (conversationId: string) => {
     try {
       await deleteConversation(conversationId);
       if (chatState.conversationId === conversationId) {
-        handleBackToHome();
+        setChatState({ type: "home" });
+        setMessages([]);
+        setStreamMessages([]);
       }
     } catch (error) {
       console.error("Failed to delete conversation:", error);
@@ -252,29 +246,51 @@ export default function ChatLayout() {
       {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`relative flex-shrink-0 bg-surface-1 border-r border-subtle transition-all duration-200 ${
-          sidebarCollapsed ? "w-0 -ml-1" : ""
+        className={`relative flex-shrink-0 bg-surface-1 border-r border-subtle transition-all duration-300 ${
+          sidebarCollapsed ? "w-0" : ""
         }`}
         style={{ width: sidebarCollapsed ? 0 : `${sidebarWidth}px` }}
       >
         {!sidebarCollapsed && (
           <div className="flex flex-col h-full">
             {/* Sidebar Header */}
-            <div className="p-6 border-b border-subtle">
-              <div className="text-center mb-6">
-                <h1 className="text-xl font-bold text-primary">R3Chat</h1>
+            <div className="sidebar-header">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSidebarCollapsed(true)}
+                    className="h-8 w-8 p-0 btn-ghost"
+                  >
+                    <MenuIcon className="h-4 w-4" />
+                  </Button>
+                  <h1 className="text-xl font-bold text-primary">R3Chat</h1>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ThemeToggle />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push("/settings")}
+                    className="h-8 w-8 p-0 btn-ghost"
+                    title="Settings"
+                  >
+                    <SettingsIcon className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <Button
                 onClick={handleNewChat}
-                className="w-full btn-pill flex items-center justify-center"
+                className="w-full btn-primary"
               >
-                <PlusIcon className="h-4 w-4" />
-                <span>New Chat</span>
+                <PlusIcon className="h-4 w-4 mr-2" />
+                New Chat
               </Button>
             </div>
 
             {/* Conversations List */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+            <div className="sidebar-content">
               {Object.entries(groupedConversations).map(([dateGroup, convos]) => (
                 <div key={dateGroup}>
                   {convos.length > 0 && (
@@ -320,7 +336,7 @@ export default function ChatLayout() {
                                       e.stopPropagation();
                                       handleRenameStart(conversation);
                                     }}
-                                    className="h-6 w-6 rounded-full hover:bg-surface-0/20"
+                                    className="h-6 w-6 p-0 btn-ghost"
                                   >
                                     <PencilIcon className="h-3 w-3" />
                                   </Button>
@@ -331,9 +347,9 @@ export default function ChatLayout() {
                                       e.stopPropagation();
                                       handleDeleteConversation(conversation.id);
                                     }}
-                                    className="h-6 w-6 rounded-full hover:bg-red-500/20"
+                                    className="h-6 w-6 p-0 btn-ghost text-error"
                                   >
-                                    <TrashIcon className="h-3 w-3 text-red-400" />
+                                    <TrashIcon className="h-3 w-3" />
                                   </Button>
                                 </div>
                               </div>
@@ -375,17 +391,13 @@ export default function ChatLayout() {
                     }`}>
                       {profile?.account_type === "guest" ? "Free" : "Pro"}
                     </span>
-                    <span className="text-xs text-tertiary">
-                      {profile?.credits_left || 0} credits
-                    </span>
                   </div>
                 </div>
               </div>
               
               <Button
                 onClick={handleLogout}
-                variant="ghost"
-                className="w-full justify-start text-secondary hover:text-primary hover:bg-surface-2 py-2"
+                className="w-full btn-ghost justify-start"
                 title="Sign out"
               >
                 <LogOutIcon className="h-4 w-4 mr-3" />
@@ -399,54 +411,29 @@ export default function ChatLayout() {
         {!sidebarCollapsed && (
           <div
             ref={resizerRef}
-            className="sidebar-resizer absolute top-0 right-0 h-full"
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent-primary/20 transition-colors"
           />
         )}
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 relative">
-        {/* Top Controls - Positioned over main content */}
-        <div className="absolute top-6 left-6 z-10 flex items-center space-x-3">
+        {/* Sidebar toggle when collapsed */}
+        {sidebarCollapsed && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="h-10 w-10 rounded-full hover:bg-surface-2 icon-hover bg-surface-1/80 backdrop-blur-sm border border-subtle/50"
+            onClick={() => setSidebarCollapsed(false)}
+            className="absolute top-6 left-6 z-10 h-10 w-10 p-0 btn-ghost bg-surface-1/80 backdrop-blur-sm border border-subtle/50"
           >
             <MenuIcon className="h-5 w-5" />
           </Button>
-          
-          {chatState.type !== "home" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBackToHome}
-              className="h-10 w-10 rounded-full hover:bg-surface-2 icon-hover bg-surface-1/80 backdrop-blur-sm border border-subtle/50"
-            >
-              <ArrowLeftIcon className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        )}
 
-        {/* Top Right Controls */}
-        <div className="absolute top-6 right-6 z-10 flex items-center space-x-2">
-          <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/settings")}
-            className="h-10 w-10 rounded-full hover:bg-surface-2 icon-hover bg-surface-1/80 backdrop-blur-sm border border-subtle/50"
-            title="Settings"
-          >
-            <SettingsIcon className="h-4 w-4 text-secondary" />
-          </Button>
-        </div>
-
-        {/* Chat Messages - Full height with padding for controls */}
-        <div className="flex-1 overflow-y-auto pt-20 pb-32 px-6">
+        {/* Chat Messages - Full height with proper padding */}
+        <div className="flex-1 overflow-y-auto" style={{ paddingTop: sidebarCollapsed ? '80px' : '20px', paddingBottom: '160px' }}>
           {chatState.type === "home" ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full px-6">
               <div className="text-center space-y-8 max-w-md">
                 <MessageSquareIcon className="h-20 w-20 text-accent-primary mx-auto" />
                 <div>
@@ -460,30 +447,25 @@ export default function ChatLayout() {
                 </div>
                 <Button
                   onClick={handleNewChat}
-                  className="btn-pill px-8 py-4 text-lg"
+                  className="btn-primary px-8 py-4 text-lg"
                 >
-                  <PlusIcon className="h-5 w-5" />
+                  <PlusIcon className="h-5 w-5 mr-2" />
                   Start New Chat
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto px-6">
               {streamMessages.map((message, index) => (
-                <div
-                  key={message.id || index}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
+                <div key={message.id || index}>
                   <div
                     className={`${
                       message.role === "user"
                         ? "message-user"
                         : "message-assistant"
-                    } ${message.isError ? "border border-red-500" : ""}`}
+                    } ${message.isError ? "border border-error" : ""}`}
                   >
-                    <div className="whitespace-pre-wrap break-words leading-relaxed">
+                    <div className="whitespace-pre-wrap break-words">
                       {message.content}
                     </div>
                     {message.isStreaming && (
@@ -502,18 +484,16 @@ export default function ChatLayout() {
           <div className="max-w-4xl mx-auto">
             <div className="chat-input-container">
               {/* Text Input Area */}
-              <div className="relative">
-                <textarea
-                  ref={textareaRef}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Type your message..."
-                  disabled={isStreaming}
-                  className="chat-input-textarea w-full"
-                  rows={1}
-                />
-              </div>
+              <textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Type your message..."
+                disabled={isStreaming}
+                className="chat-input-textarea"
+                rows={1}
+              />
               
               {/* Controls Bar */}
               <div className="chat-controls-bar">
@@ -522,7 +502,7 @@ export default function ChatLayout() {
                   <select
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
-                    className="btn-secondary min-w-0"
+                    className="btn-secondary"
                     disabled={isStreaming}
                   >
                     {MODEL_OPTIONS.map((model) => (
@@ -541,26 +521,19 @@ export default function ChatLayout() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 w-9 rounded-lg hover:bg-surface-2 icon-hover"
+                    className="h-9 w-9 p-0 btn-ghost"
                     title="Attach file (.txt, .md)"
                   >
-                    <PaperclipIcon className="h-4 w-4 text-tertiary" />
+                    <PaperclipIcon className="h-4 w-4" />
                   </Button>
                 </div>
 
                 {/* Right side controls */}
                 <div className="flex items-center space-x-3">
-                  {profile && (
-                    <span className="text-xs text-secondary font-medium">
-                      {profile.credits_left} credits
-                    </span>
-                  )}
-                  
                   {isStreaming ? (
                     <Button
                       onClick={stopStreaming}
-                      size="sm"
-                      className="h-9 w-9 rounded-lg bg-red-500 hover:bg-red-600 text-white"
+                      className="h-9 w-9 p-0 bg-error hover:bg-error/80 text-white border-0"
                       title="Stop generation"
                     >
                       <StopCircleIcon className="h-4 w-4" />
@@ -569,11 +542,10 @@ export default function ChatLayout() {
                     <Button
                       onClick={handleSendMessage}
                       disabled={!inputValue.trim()}
-                      size="sm"
-                      className={`h-9 w-9 rounded-lg transition-all duration-200 ${
+                      className={`h-9 w-9 p-0 border-0 ${
                         inputValue.trim()
-                          ? "bg-accent-primary hover:bg-accent-hover text-white hover:scale-105"
-                          : "bg-surface-2 text-tertiary cursor-not-allowed"
+                          ? "btn-primary"
+                          : "bg-surface-2 text-muted cursor-not-allowed"
                       }`}
                       title="Send message"
                     >
@@ -585,8 +557,8 @@ export default function ChatLayout() {
 
               {/* Error Display */}
               {streamError && (
-                <div className="px-4 pb-4">
-                  <div className="text-sm text-red-400 bg-red-500/10 rounded-lg p-3 border border-red-500/20">
+                <div className="px-6 pb-4">
+                  <div className="text-sm text-error bg-error/10 rounded-lg p-3 border border-error/20">
                     {streamError}
                   </div>
                 </div>
