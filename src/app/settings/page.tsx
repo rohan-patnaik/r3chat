@@ -325,10 +325,9 @@ export default function SettingsPage() {
                     <span className="text-sm font-medium text-text-primary mr-1.5">
                       Premium
                     </span>
-                    <InfoIcon
-                      className="h-3.5 w-3.5 text-text-secondary"
-                      title="Premium models for Pro plan users"
-                    />
+                    <span title="Premium models for Pro plan users">
+                      <InfoIcon className="h-3.5 w-3.5 text-text-secondary" />
+                    </span>
                   </div>
                   <span className="text-sm text-text-primary">
                     {`${
