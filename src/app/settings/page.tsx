@@ -376,7 +376,7 @@ export default function SettingsPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2.5 text-sm font-medium rounded-t-md whitespace-nowrap transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-opacity-50
+                      className={`px-4 py-2.5 text-sm font-medium rounded-md whitespace-nowrap transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-opacity-50
                       ${
                         activeTab === tab.id
                           ? "bg-accent-primary text-[var(--btn-primary-text)]"
@@ -404,7 +404,7 @@ export default function SettingsPage() {
                   {profile?.account_type === "pro" && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-                        <span className="text-4xl mb-3 block">🚀</span>
+                        <span className="text-4xl mb-3 block text-accent-primary">🚀</span>
                         <h4 className="text-lg font-semibold text-text-primary mb-1">
                           Access to All Models
                         </h4>
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                         </p>
                       </div>
                       <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-                        <span className="text-4xl mb-3 block">💰</span>
+                        <span className="text-4xl mb-3 block text-accent-primary">💰</span>
                         <h4 className="text-lg font-semibold text-text-primary mb-1">
                           Generous Limits
                         </h4>
@@ -423,7 +423,7 @@ export default function SettingsPage() {
                         </p>
                       </div>
                       <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-                        <span className="text-4xl mb-3 block">🎧</span>
+                        <span className="text-4xl mb-3 block text-accent-primary">🎧</span>
                         <h4 className="text-lg font-semibold text-text-primary mb-1">
                           Priority Support
                         </h4>
