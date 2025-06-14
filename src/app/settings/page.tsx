@@ -203,412 +203,511 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-surface-0">
       {/* Header */}
-      <div className="border-b border-subtle bg-surface-0 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.back()}
-              className="h-8 w-8 p-0 text-text-primary hover:bg-surface-1"
-            >
-              <ArrowLeftIcon className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-semibold text-text-primary">Settings</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                router.push("/login");
-              }}
-              className="text-text-primary hover:bg-surface-1"
-            >
-              Sign out
-            </Button>
-          </div>
+      <div className="settings-header flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="h-10 w-10 p-0 btn-ghost icon-hover text-text-primary"
+            title="Back to Chat"
+          >
+            <ArrowLeftIcon className="h-5 w-5" />
+          </Button>
+          <h1 className="text-3xl font-bold text-text-primary">Settings</h1>
+        </div>
+        <div className="flex items-center space-x-4">
+          <ThemeToggle />
+          <Button
+            variant="link"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.push("/login");
+            }}
+            className="text-text-primary hover:underline"
+            title="Sign out"
+          >
+            Sign out
+          </Button>
         </div>
       </div>
 
-      <div className="flex">
-        {/* Left Sidebar */}
-        <div className="w-80 border-r border-subtle bg-surface-0 p-6">
-          {/* User Profile Card */}
-          <div className="mb-6 rounded-lg border border-subtle bg-surface-1 p-6 text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-accent-primary text-white">
-              <span className="text-2xl font-bold">
-                {profile?.display_name?.charAt(0)?.toUpperCase() ||
-                  profile?.email?.charAt(0)?.toUpperCase() ||
-                  "U"}
+      <div className="settings-container">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Column */}
+          <div className="lg:w-1/3 xl:w-1/4 space-y-6">
+            {/* User Profile Card */}
+            <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
+              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-accent-primary bg-surface-2 mx-auto mb-4 flex items-center justify-center">
+                {profile?.email ? (
+                  <img
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      profile.display_name ||
+                        profile.email.split("@")[0]
+                    )}&background=${encodeURIComponent(
+                      theme === "dark" ? "#8a6d5f" : "#6b4f41"
+                    )}&color=fff&size=96&font-size=0.33&bold=true`}
+                    alt="Profile Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <UserIcon className="h-12 w-12 text-text-secondary" />
+                )}
+              </div>
+              <h3 className="text-xl font-semibold text-text-primary truncate">
+                {profile?.display_name ||
+                  profile?.email?.split("@")[0] ||
+                  "User"}
+              </h3>
+              <p className="text-sm text-text-secondary truncate mb-3">
+                {profile?.email || "No email"}
+              </p>
+              <span
+                className={`px-3 py-1 text-xs font-semibold rounded-full bg-accent-primary text-[var(--btn-primary-text)]`}
+              >
+                {profile?.account_type === "guest"
+                  ? "Free Plan"
+                  : "Pro Plan"}
               </span>
             </div>
-            <h3 className="mb-1 text-lg font-semibold text-text-primary">
-              {profile?.display_name ||
-                profile?.email?.split("@")[0] ||
-                "User"}
-            </h3>
-            <p className="mb-3 text-sm text-text-secondary">
-              {profile?.email || "No email"}
-            </p>
-            <span className="inline-block rounded-full bg-text-primary px-3 py-1 text-xs font-medium text-surface-0">
-              {profile?.account_type === "guest" ? "Free Plan" : "Pro Plan"}
-            </span>
-          </div>
 
-          {/* Message Usage Card */}
-          <div className="rounded-lg border border-subtle bg-surface-1 p-6">
-            <h3 className="mb-2 text-lg font-semibold text-text-primary">
-              Message Usage
-            </h3>
-            <p className="mb-6 text-sm text-text-secondary">
-              Resets on Jan 1, 2025
-            </p>
-
-            {/* Standard Usage */}
-            <div className="mb-6">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-text-primary">
-                  Standard
-                </span>
-                <span className="text-sm text-text-primary">
-                  {`${
-                    profile?.account_type === "guest"
-                      ? 10 - (profile.credits_left ?? 10)
-                      : 1500 - (profile?.credits_left ?? 1500)
-                  } / ${profile?.account_type === "guest" ? 10 : 1500}`}
-                </span>
-              </div>
-              <div className="mb-2 h-2 w-full rounded-full bg-border-subtle">
-                <div
-                  className="h-2 rounded-full bg-accent-primary"
-                  style={{
-                    width: `${
-                      ((profile?.account_type === "guest"
-                        ? 10 - (profile.credits_left ?? 10)
-                        : 1500 - (profile?.credits_left ?? 1500)) /
-                        (profile?.account_type === "guest" ? 10 : 1500)) *
-                      100
-                    }%`,
-                  }}
-                ></div>
-              </div>
-              <p className="text-xs text-text-secondary">
-                {`${
-                  profile?.credits_left ??
-                  (profile?.account_type === "guest" ? 10 : 1500)
-                } messages remaining`}
+            {/* Message Usage Card */}
+            <div className="p-6 bg-surface-1 rounded-lg border border-subtle">
+              <h3 className="text-xl font-semibold text-text-primary mb-1">
+                Message Usage
+              </h3>
+              <p className="text-sm text-text-secondary mb-6">
+                Resets on Jan 1, 2025
               </p>
-            </div>
-
-            {/* Premium Usage */}
-            <div className="mb-6">
-              <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="mr-2 text-sm font-medium text-text-primary">
-                    Premium
+              {/* Standard Usage */}
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium text-text-primary">
+                    Standard
                   </span>
-                  <InfoIcon className="h-4 w-4 text-text-secondary" />
+                  <span className="text-sm text-text-primary">
+                    {`${
+                      profile?.account_type === "guest"
+                        ? 10 - (profile.credits_left ?? 10)
+                        : 1500 - (profile?.credits_left ?? 1500)
+                    } / ${
+                      profile?.account_type === "guest" ? 10 : 1500
+                    }`}
+                  </span>
                 </div>
-                <span className="text-sm text-text-primary">0 / 0</span>
+                <div className="w-full bg-border-subtle rounded-full h-2.5">
+                  <div
+                    className="bg-accent-primary h-2.5 rounded-full"
+                    style={{
+                      width: `${
+                        ((profile?.account_type === "guest"
+                          ? 10 - (profile.credits_left ?? 10)
+                          : 1500 - (profile?.credits_left ?? 1500)) /
+                          (profile?.account_type === "guest"
+                            ? 10
+                            : 1500)) *
+                        100
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <p className="text-xs text-text-secondary mt-1.5">
+                  {`${
+                    profile?.credits_left ??
+                    (profile?.account_type === "guest" ? 10 : 1500)
+                  } messages remaining`}
+                </p>
               </div>
-              <div className="mb-2 h-2 w-full rounded-full bg-border-subtle">
-                <div className="h-2 w-0 rounded-full bg-accent-primary"></div>
-              </div>
-              <p className="text-xs text-text-secondary">0 messages remaining</p>
-            </div>
-
-            <Button
-              onClick={() => window.open("https://example.com/billing", "_blank")}
-              className="w-full bg-accent-primary text-white hover:bg-accent-hover"
-            >
-              Buy more premium credits
-              <ArrowRightIcon className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1">
-          {/* Tabs */}
-          <div className="border-b border-subtle bg-surface-0 px-6">
-            <nav className="flex space-x-8">
-              {tabsConfig.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`border-b-2 py-4 text-sm font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? "border-accent-primary text-accent-primary"
-                      : "border-transparent text-text-secondary hover:text-text-primary"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          {/* Tab Content */}
-          <div className="p-6">
-            {activeTab === "account" && (
-              <div className="max-w-2xl space-y-8">
-                <div>
-                  <h2 className="mb-2 text-xl font-semibold text-text-primary">
-                    Account
-                  </h2>
-                </div>
-
-                <div>
-                  <h3 className="mb-4 text-lg font-medium text-text-primary">
-                    Account Settings
-                  </h3>
-                </div>
-
-                <div>
-                  <h4 className="mb-2 text-base font-medium text-text-primary">
-                    Subscription
-                  </h4>
-                  <p className="mb-4 text-sm text-text-secondary">
-                    You are currently on the{" "}
-                    <span className="font-medium">
-                      {profile?.account_type === "guest" ? "Free" : "Pro"} Plan
+              {/* Premium Usage */}
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center">
+                    <span className="text-sm font-medium text-text-primary mr-1.5">
+                      Premium
                     </span>
-                    . Consider upgrading for more features.
-                  </p>
-                  <Button
-                    onClick={handleManageSubscription}
-                    className="bg-accent-primary text-white hover:bg-accent-hover"
-                  >
-                    Manage Subscription
-                    <ExternalLinkIcon className="ml-2 h-4 w-4" />
-                  </Button>
+                    <span title="Premium models for Pro plan users">
+                      <InfoIcon className="h-3.5 w-3.5 text-text-secondary" />
+                    </span>
+                  </div>
+                  <span className="text-sm text-text-primary">
+                    {`${
+                      profile?.account_type === "pro"
+                        ? 0
+                        : 0
+                    } / ${
+                      profile?.account_type === "pro" ? 100 : 0
+                    }`}
+                  </span>
                 </div>
-
-                <div>
-                  <h4 className="mb-2 text-base font-medium text-danger-warning">
-                    Danger Zone
-                  </h4>
-                  <p className="mb-4 text-sm text-text-secondary">
-                    Permanently delete your account and all associated data. This action cannot be undone.
-                  </p>
-                  <Button
-                    variant="destructive"
-                    onClick={() =>
-                      alert("Account deletion initiated (placeholder). This is irreversible.")
-                    }
-                    className="bg-danger-warning text-white hover:bg-danger-warning/90"
-                  >
-                    Delete Account
-                  </Button>
+                <div className="w-full bg-border-subtle rounded-full h-2.5">
+                  <div
+                    className="bg-accent-primary h-2.5 rounded-full"
+                    style={{
+                      width: `${
+                        profile?.account_type === "pro" ? 0 : 0
+                      }%`,
+                    }}
+                  ></div>
                 </div>
+                <p className="text-xs text-text-secondary mt-1.5">
+                  {`${
+                    profile?.account_type === "pro" ? 100 : 0
+                  } messages remaining`}
+                </p>
               </div>
-            )}
+              <Button
+                onClick={() =>
+                  window.open("https://example.com/billing", "_blank")
+                }
+                className="w-full btn-primary"
+              >
+                Buy more premium credits
+                <ArrowRightIcon className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </div>
 
-            {activeTab === "models" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="mb-2 text-xl font-semibold text-text-primary">
-                    Available Models
+          {/* Right Column */}
+          <div className="flex-1">
+            <div className="mb-6 border-b border-subtle">
+              <nav className="flex space-x-1 overflow-x-auto pb-px">
+                {tabsConfig.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-4 py-2.5 text-sm font-medium rounded-t-md whitespace-nowrap transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-opacity-50
+                      ${
+                        activeTab === tab.id
+                          ? "bg-accent-primary text-[var(--btn-primary-text)]"
+                          : "text-text-secondary hover:bg-surface-1 hover:text-text-primary"
+                      }
+                    `}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+            <div className="p-6 bg-surface-1 rounded-lg border border-subtle min-h-[400px]">
+              <h2 className="text-xl font-semibold text-text-primary mb-4">
+                {tabsConfig.find((t) => t.id === activeTab)?.label ||
+                  "Content Area"}
+              </h2>
+              {activeTab === "account" && (
+                <div className="space-y-8 animate-fade-in">
+                  <h2 className="text-2xl font-semibold text-text-primary">
+                    {profile?.account_type === "pro"
+                      ? "Pro Plan Benefits"
+                      : "Account Settings"}
                   </h2>
-                  <p className="text-text-secondary">
-                    Choose which models appear in your model selector. This won't affect existing conversations.
-                  </p>
+                  {profile?.account_type === "pro" && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
+                        <span className="text-4xl mb-3 block">🚀</span>
+                        <h4 className="text-lg font-semibold text-text-primary mb-1">
+                          Access to All Models
+                        </h4>
+                        <p className="text-sm text-text-secondary">
+                          Utilize our most powerful AI models without
+                          restrictions.
+                        </p>
+                      </div>
+                      <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
+                        <span className="text-4xl mb-3 block">💰</span>
+                        <h4 className="text-lg font-semibold text-text-primary mb-1">
+                          Generous Limits
+                        </h4>
+                        <p className="text-sm text-text-secondary">
+                          Enjoy higher message quotas and usage allowances.
+                        </p>
+                      </div>
+                      <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
+                        <span className="text-4xl mb-3 block">🎧</span>
+                        <h4 className="text-lg font-semibold text-text-primary mb-1">
+                          Priority Support
+                        </h4>
+                        <p className="text-sm text-text-secondary">
+                          Get faster assistance from our dedicated support team.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-6 bg-surface-1 rounded-lg border border-subtle">
+                    <h3 className="text-xl font-semibold text-text-primary mb-4">
+                      Subscription
+                    </h3>
+                    <p className="text-text-secondary mb-4">
+                      You are currently on the{" "}
+                      <span className="font-semibold">
+                        {profile?.account_type === "guest"
+                          ? "Free Plan"
+                          : "Pro Plan"}
+                      </span>
+                      .
+                      {profile?.account_type === "guest" &&
+                        " Consider upgrading for more features."}
+                    </p>
+                    <Button
+                      onClick={() =>
+                        window.open("https://example.com/billing", "_blank")
+                      }
+                      className="btn-primary"
+                    >
+                      Manage Subscription
+                      <ExternalLinkIcon className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                  <div className="p-6 bg-surface-1 rounded-lg border border-subtle">
+                    <h3 className="text-xl font-semibold text-danger-warning mb-2">
+                      Danger Zone
+                    </h3>
+                    <p className="text-text-secondary mb-4">
+                      Permanently delete your account and all associated data.
+                      This action cannot be undone.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      onClick={() =>
+                        alert(
+                          "Account deletion initiated (placeholder). This is irreversible."
+                        )
+                      }
+                    >
+                      Delete Account
+                    </Button>
+                  </div>
                 </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" className="text-text-secondary">
-                    <ListFilterIcon className="mr-2 h-4 w-4" /> Filter by features
-                  </Button>
-                  <Button variant="outline" className="text-text-secondary">
-                    <SparklesIcon className="mr-2 h-4 w-4" /> Select Recommended Models
-                  </Button>
-                  <Button variant="outline" className="text-text-secondary">
-                    <XCircleIcon className="mr-2 h-4 w-4" /> Unselect All
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  {AVAILABLE_MODELS.map((model) => {
-                    const modelState = modelSettings.find((m) => m.id === model.id);
-                    const isEnabled = modelState?.enabled ?? model.enabled;
-                    return (
-                      <div
-                        key={model.id}
-                        className={`rounded-lg border p-4 ${
-                          isEnabled ? "border-accent-primary bg-surface-1" : "border-subtle bg-surface-1"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="mb-2 flex items-center">
-                              <span className="mr-3 text-2xl">
-                                {model.provider === "OpenAI"
-                                  ? "🤖"
-                                  : model.provider === "Anthropic"
-                                  ? "✨"
-                                  : "🧠"}
-                              </span>
-                              <h3 className="text-lg font-semibold text-text-primary">
-                                {model.name}
-                              </h3>
-                            </div>
-                            <p className="mb-3 text-sm text-text-secondary">
-                              {model.description}
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {model.features.map((feature) => (
-                                <span
-                                  key={feature}
-                                  className="rounded-full border border-subtle bg-surface-0 px-2 py-1 text-xs text-text-secondary"
-                                >
-                                  {feature}
+              )}
+              {activeTab === "models" && (
+                <div className="space-y-6 animate-fade-in">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-text-primary mb-1">
+                      Available Models
+                    </h2>
+                    <p className="text-text-secondary">
+                      Choose which models appear in your model selector. This
+                      won't affect existing conversations.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      variant="outline"
+                      className="text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary"
+                    >
+                      <ListFilterIcon className="h-4 w-4 mr-2" /> Filter by
+                      features
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary"
+                    >
+                      <SparklesIcon className="h-4 w-4 mr-2" /> Select
+                      Recommended Models
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary"
+                    >
+                      <XCircleIcon className="h-4 w-4 mr-2" /> Unselect All
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {AVAILABLE_MODELS.map((model) => {
+                      const modelState = modelSettings.find(
+                        (m) => m.id === model.id
+                      );
+                      const isEnabled =
+                        modelState?.enabled ?? model.enabled;
+                      return (
+                        <div
+                          key={model.id}
+                          className={`p-5 bg-surface-1 rounded-lg border ${
+                            isEnabled
+                              ? "border-accent-primary shadow-md"
+                              : "border-subtle"
+                          } transition-all`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center mb-2">
+                                <span className="text-2xl mr-3 text-accent-primary">
+                                  {model.provider === "OpenAI"
+                                    ? "🤖"
+                                    : model.provider === "Anthropic"
+                                    ? "✨"
+                                    : "🧠"}
                                 </span>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <label className="flex cursor-pointer items-center">
-                              <input
-                                type="checkbox"
-                                className="sr-only"
-                                checked={isEnabled}
-                                onChange={() => handleToggleModel(model.id)}
-                              />
-                              <div
-                                className={`relative h-6 w-10 rounded-full ${
-                                  isEnabled ? "bg-accent-primary" : "bg-border-subtle"
-                                }`}
-                              >
-                                <div
-                                  className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
-                                    isEnabled ? "translate-x-4" : "translate-x-1"
-                                  }`}
-                                ></div>
+                                <h3 className="text-lg font-semibold text-text-primary">
+                                  {model.name}
+                                </h3>
                               </div>
-                            </label>
+                              <p className="text-sm text-text-secondary mb-3 leading-relaxed">
+                                {model.description}
+                              </p>
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {model.features.map((feature) => (
+                                  <span
+                                    key={feature}
+                                    className="px-2.5 py-0.5 text-xs font-medium bg-surface-0 text-text-secondary rounded-full border border-subtle"
+                                  >
+                                    {feature}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="ml-4 flex flex-col items-end space-y-2">
+                              <label
+                                htmlFor={`toggle-${model.id}`}
+                                className="flex items-center cursor-pointer"
+                              >
+                                <div className="relative">
+                                  <input
+                                    type="checkbox"
+                                    id={`toggle-${model.id}`}
+                                    className="sr-only"
+                                    checked={isEnabled}
+                                    onChange={() =>
+                                      handleToggleModel(model.id)
+                                    }
+                                  />
+                                  <div
+                                    className={`block w-10 h-6 rounded-full ${
+                                      isEnabled
+                                        ? "bg-accent-primary"
+                                        : "bg-border-subtle"
+                                    }`}
+                                  ></div>
+                                  <div
+                                    className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
+                                      isEnabled ? "translate-x-4" : ""
+                                    }`}
+                                  ></div>
+                                </div>
+                              </label>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {activeTab === "apikeys" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="mb-2 text-xl font-semibold text-text-primary">
-                    API Keys
-                  </h2>
-                  <p className="text-text-secondary">
-                    Bring your own API keys for selected models. Messages sent using your API keys will not count towards your monthly limits.
-                  </p>
-                </div>
-
-                {[
-                  {
-                    provider: "openai" as keyof typeof apiKeys,
-                    name: "OpenAI API Key",
-                    models: ["GPT-4o", "GPT-4o Mini"],
-                    consoleLink: "https://platform.openai.com/api-keys",
-                    placeholderPrefix: "sk-",
-                  },
-                  {
-                    provider: "claude" as keyof typeof apiKeys,
-                    name: "Anthropic API Key",
-                    models: ["Claude 3.5 Sonnet", "Claude 3.5 Haiku"],
-                    consoleLink: "https://console.anthropic.com/settings/keys",
-                    placeholderPrefix: "sk-ant-",
-                  },
-                  {
-                    provider: "gemini" as keyof typeof apiKeys,
-                    name: "Gemini API Key",
-                    models: ["Gemini 1.5 Pro", "Gemini 1.5 Flash"],
-                    consoleLink: "https://aistudio.google.com/app/apikey",
-                    placeholderPrefix: "AIza",
-                  },
-                ].map((item) => (
-                  <div key={item.provider} className="rounded-lg border border-subtle bg-surface-1 p-6">
-                    <h3 className="mb-2 text-lg font-semibold text-text-primary">
-                      {item.name}
-                    </h3>
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      {item.models.map((modelName) => (
-                        <span
-                          key={modelName}
-                          className="rounded-full border border-subtle bg-surface-0 px-2 py-1 text-xs text-text-secondary"
-                        >
-                          {modelName}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="relative mb-4">
-                      <input
-                        type={showApiKeys[item.provider] ? "text" : "password"}
-                        value={apiKeys[item.provider]}
-                        onChange={(e) =>
-                          setApiKeys((prev) => ({
-                            ...prev,
-                            [item.provider]: e.target.value,
-                          }))
-                        }
-                        placeholder={
-                          savedApiKeys[item.provider]
-                            ? "••••••••••••••••"
-                            : `${item.placeholderPrefix}...`
-                        }
-                        className="w-full rounded-md border border-subtle bg-surface-0 p-3 pr-12 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => toggleApiKeyVisibility(item.provider)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-secondary hover:text-text-primary"
-                      >
-                        {showApiKeys[item.provider] ? (
-                          <EyeOffIcon className="h-5 w-5" />
-                        ) : (
-                          <EyeIcon className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <a
-                        href={item.consoleLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-sm text-accent-primary hover:underline"
-                      >
-                        Get your API key from{" "}
-                        {item.provider.charAt(0).toUpperCase() + item.provider.slice(1)} Console
-                        <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                      </a>
-                      <Button
-                        onClick={() => handleSaveApiKey(item.provider)}
-                        disabled={isLoading || !apiKeys[item.provider]?.trim()}
-                        className="bg-accent-primary text-white hover:bg-accent-hover disabled:opacity-50"
-                      >
-                        {isLoading ? "Saving..." : "Save"}
-                      </Button>
-                    </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            )}
-
-            {(activeTab === "customization" ||
-              activeTab === "history" ||
-              activeTab === "attachments" ||
-              activeTab === "contact") && (
-              <div>
-                <h2 className="mb-4 text-xl font-semibold text-text-primary">
-                  {tabsConfig.find((t) => t.id === activeTab)?.label}
-                </h2>
-                <p className="text-text-secondary">This section is under construction.</p>
-              </div>
-            )}
+                </div>
+              )}
+              {activeTab === "apikeys" && (
+                <div className="space-y-6 animate-fade-in">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-text-primary mb-1">
+                      API Keys
+                    </h2>
+                    <p className="text-text-secondary">
+                      Bring your own API keys for selected models. Messages sent
+                      using your API keys will not count towards your monthly
+                      limits. Your keys are encrypted and stored securely.
+                    </p>
+                  </div>
+                  {[
+                    {
+                      provider: "openai" as keyof typeof apiKeys,
+                      name: "OpenAI API Key",
+                      models: ["GPT-4o", "GPT-4o Mini"],
+                      consoleLink: "https://platform.openai.com/api-keys",
+                      placeholderPrefix: "sk-",
+                    },
+                    {
+                      provider: "claude" as keyof typeof apiKeys,
+                      name: "Anthropic API Key",
+                      models: ["Claude 3.5 Sonnet", "Claude 3.5 Haiku"],
+                      consoleLink:
+                        "https://console.anthropic.com/settings/keys",
+                      placeholderPrefix: "sk-ant-",
+                    },
+                    {
+                      provider: "gemini" as keyof typeof apiKeys,
+                      name: "Gemini API Key",
+                      models: ["Gemini 1.5 Pro", "Gemini 1.5 Flash"],
+                      consoleLink: "https://aistudio.google.com/app/apikey",
+                      placeholderPrefix: "AIza",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.provider}
+                      className="p-6 bg-surface-1 rounded-lg border border-subtle"
+                    >
+                      <h3 className="text-xl font-semibold text-text-primary mb-2">
+                        {item.name}
+                      </h3>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {item.models.map((modelName) => (
+                          <span
+                            key={modelName}
+                            className="px-2 py-0.5 text-xs bg-surface-0 text-text-secondary rounded-full border border-subtle"
+                          >
+                            {modelName}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="relative mb-2">
+                        <input
+                          type={showApiKeys[item.provider] ? "text" : "password"}
+                          value={apiKeys[item.provider]}
+                          onChange={(e) =>
+                            setApiKeys((prev) => ({
+                              ...prev,
+                              [item.provider]: e.target.value,
+                            }))
+                          }
+                          placeholder={
+                            savedApiKeys[item.provider]
+                              ? "••••••••••••••••"
+                              : `${item.placeholderPrefix}...`
+                          }
+                          className="w-full p-3 border border-subtle rounded-md bg-surface-0 text-text-primary focus:ring-2 focus:ring-accent-primary focus:border-accent-primary pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleApiKeyVisibility(item.provider)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-text-secondary hover:text-text-primary"
+                        >
+                          {showApiKeys[item.provider] ? (
+                            <EyeOffIcon className="h-5 w-5" />
+                          ) : (
+                            <EyeIcon className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between mt-4">
+                        <a
+                          href={item.consoleLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-accent-primary hover:underline inline-flex items-center"
+                        >
+                          Get your API key from{" "}
+                          {item.provider.charAt(0).toUpperCase() +
+                            item.provider.slice(1)}{" "}
+                          Console
+                          <ExternalLinkIcon className="h-3.5 w-3.5 ml-1.5" />
+                        </a>
+                        <Button
+                          onClick={() => handleSaveApiKey(item.provider)}
+                          disabled={isLoading || !apiKeys[item.provider]?.trim()}
+                          className="btn-primary"
+                        >
+                          {isLoading ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(activeTab === "customization" ||
+                activeTab === "history" ||
+                activeTab === "attachments" ||
+                activeTab === "contact") && (
+                <p className="mt-4 text-text-secondary">
+                  This section is under construction.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
