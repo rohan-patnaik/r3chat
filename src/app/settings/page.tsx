@@ -562,9 +562,6 @@ export default function SettingsPage() {
                           <p className="text-lg font-semibold text-primary">
                             Buy more creds
                           </p>
-                          <p className="text-lg font-semibold text-primary">
-                            coz AI ain't cheap
-                          </p>
                         </div>
                         <Button
                           onClick={handleManageSubscription}

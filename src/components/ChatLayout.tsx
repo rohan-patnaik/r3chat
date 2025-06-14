@@ -7,21 +7,19 @@ import {
   PlusIcon,
   MessageSquareIcon,
   SendIcon,
-  SettingsIcon,
   LogOutIcon,
   StopCircleIcon,
   PencilIcon,
   TrashIcon,
   PaperclipIcon,
   MenuIcon,
+  SearchIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useConversations } from "@/lib/hooks/useConversations";
 import { useChatStream } from "@/lib/hooks/useChatStream";
 import { useUserProfile } from "@/lib/hooks/useUserProfile";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import {
-  formatRelativeTime,
   groupConversationsByDate,
 } from "@/lib/utils/date";
 import { ConversationWithLastMessage } from "@/lib/supabase/queries";
@@ -47,8 +45,8 @@ const MODEL_OPTIONS: ModelOption[] = [
   { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "OpenAI", isFreemium: true },
   { id: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet", provider: "Anthropic" },
   { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku", provider: "Anthropic", isFreemium: true },
-  { id: "gemini-1.5-pro", label: "Gemini 1.5 Pro", provider: "Google" },
-  { id: "gemini-1.5-flash", label: "Gemini 1.5 Flash", provider: "Google", isFreemium: true },
+  { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash-Lite", provider: "Google" },
+  { id: "gemini-2.5-flash-preview-05-20", label: "Gemini 2.5 Flash", provider: "Google", isFreemium: true },
 ];
 
 function hasCreatedAt(
@@ -66,6 +64,7 @@ export default function ChatLayout() {
   const [editTitle, setEditTitle] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -238,8 +237,19 @@ export default function ChatLayout() {
     }
   };
 
-  const filteredConversations = conversations.filter(hasCreatedAt);
+  // Filter conversations by search term
+  const filteredConversations = conversations
+    .filter(hasCreatedAt)
+    .filter((conv) =>
+      !searchTerm ||
+      (conv.title || "New Chat").toLowerCase().includes(searchTerm.toLowerCase())
+    );
   const groupedConversations = groupConversationsByDate(filteredConversations);
+
+  // Extract user name from Google profile/email
+  const userName =
+    profile?.display_name ||
+    (profile?.email ? profile.email.split("@")[0] : "User");
 
   return (
     <div className="flex h-screen bg-surface-0">
@@ -267,26 +277,36 @@ export default function ChatLayout() {
                   </Button>
                   <h1 className="text-xl font-bold text-primary">R3Chat</h1>
                 </div>
-                <div className="flex items-center gap-2">
-                  <ThemeToggle />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push("/settings")}
-                    className="h-8 w-8 p-0 btn-ghost"
-                    title="Settings"
-                  >
-                    <SettingsIcon className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="h-8 w-8 p-0 btn-ghost"
+                  title="Sign out"
+                >
+                  <LogOutIcon className="h-5 w-5" />
+                </Button>
               </div>
               <Button
                 onClick={handleNewChat}
-                className="w-full btn-primary"
+                className="w-full btn-primary mb-4"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 New Chat
               </Button>
+              {/* Search Chats Field */}
+              <div className="mb-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search Chats"
+                    className="input-field pl-10"
+                  />
+                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
+                </div>
+              </div>
             </div>
 
             {/* Conversations List */}
@@ -369,7 +389,7 @@ export default function ChatLayout() {
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-subtle bg-surface-2 flex-shrink-0">
                   {profile?.email ? (
                     <img
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.email)}&background=D2691E&color=fff&size=48`}
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=D2691E&color=fff&size=48`}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />
@@ -381,7 +401,7 @@ export default function ChatLayout() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-primary truncate">
-                    {profile?.email?.split("@")[0] || "User"}
+                    {userName}
                   </p>
                   <div className="flex items-center space-x-2 mt-1">
                     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
@@ -394,15 +414,6 @@ export default function ChatLayout() {
                   </div>
                 </div>
               </div>
-              
-              <Button
-                onClick={handleLogout}
-                className="w-full btn-ghost justify-start"
-                title="Sign out"
-              >
-                <LogOutIcon className="h-4 w-4 mr-3" />
-                Sign Out
-              </Button>
             </div>
           </div>
         )}
@@ -416,67 +427,43 @@ export default function ChatLayout() {
         )}
       </div>
 
+      {/* Sidebar toggle when collapsed */}
+      {sidebarCollapsed && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setSidebarCollapsed(false)}
+          className="fixed top-6 left-6 z-50 h-10 w-10 p-0 btn-ghost bg-surface-1/80 backdrop-blur-sm border border-subtle/50"
+        >
+          <MenuIcon className="h-5 w-5" />
+        </Button>
+      )}
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 relative">
-        {/* Sidebar toggle when collapsed */}
-        {sidebarCollapsed && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarCollapsed(false)}
-            className="absolute top-6 left-6 z-10 h-10 w-10 p-0 btn-ghost bg-surface-1/80 backdrop-blur-sm border border-subtle/50"
-          >
-            <MenuIcon className="h-5 w-5" />
-          </Button>
-        )}
-
         {/* Chat Messages - Full height with proper padding */}
-        <div className="flex-1 overflow-y-auto" style={{ paddingTop: sidebarCollapsed ? '80px' : '20px', paddingBottom: '160px' }}>
-          {chatState.type === "home" ? (
-            <div className="flex items-center justify-center h-full px-6">
-              <div className="text-center space-y-8 max-w-md">
-                <MessageSquareIcon className="h-20 w-20 text-accent-primary mx-auto" />
-                <div>
-                  <h2 className="text-3xl font-bold text-primary mb-6">
-                    Welcome to R3Chat
-                  </h2>
-                  <p className="text-secondary leading-relaxed text-lg">
-                    Start a conversation with our powerful AI models. 
-                    Choose your preferred model and begin chatting.
-                  </p>
-                </div>
-                <Button
-                  onClick={handleNewChat}
-                  className="btn-primary px-8 py-4 text-lg"
-                >
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  Start New Chat
-                </Button>
+        <div className="flex items-center justify-center h-full px-6">
+          <div className="text-center space-y-4 max-w-md"> {/* Adjusted space-y for overall compactness */}
+            {/* New wrapper for icon and text to manage their relative positioning */}
+            <div className="flex flex-col items-center"> 
+              <MessageSquareIcon className="h-20 w-20 text-accent-primary mb-4" /> {/* Add bottom margin to icon */}
+              <div> {/* This div now explicitly wraps the text elements */}
+                <h2 className="text-3xl font-bold text-primary mb-0"> {/* Reduced mb-6 to mb-2 */}
+                  Welcome to R3Chat
+                </h2>
+                <p className="text-secondary leading-relaxed text-lg">
+                  Support us coz AI ain't cheap!
+                </p>
               </div>
             </div>
-          ) : (
-            <div className="max-w-4xl mx-auto px-6">
-              {streamMessages.map((message, index) => (
-                <div key={message.id || index}>
-                  <div
-                    className={`${
-                      message.role === "user"
-                        ? "message-user"
-                        : "message-assistant"
-                    } ${message.isError ? "border border-error" : ""}`}
-                  >
-                    <div className="whitespace-pre-wrap break-words">
-                      {message.content}
-                    </div>
-                    {message.isStreaming && (
-                      <div className="inline-block w-2 h-5 bg-current animate-pulse ml-1" />
-                    )}
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
+            <Button
+              onClick={handleNewChat}
+              className="btn-primary px-8 py-4 text-lg"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Start New Chat
+            </Button>
+          </div>
         </div>
 
         {/* Enhanced Input Area - Fixed at bottom */}
