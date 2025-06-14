@@ -42,6 +42,7 @@ const config: Config = {
         "fade-in": "fadeIn 0.3s ease-in-out",
         "slide-in": "slideIn 0.2s ease-out",
         "pulse-glow": "pulseGlow 2s ease-in-out infinite",
+        "message-in": "messageIn 0.3s ease-out forwards",
       },
       keyframes: {
         fadeIn: {
@@ -55,6 +56,10 @@ const config: Config = {
         pulseGlow: {
           "0%, 100%": { boxShadow: "0 0 5px var(--accent-primary)" },
           "50%": { boxShadow: "0 0 20px var(--accent-primary)" },
+        },
+        messageIn: {
+          "from": { opacity: "0", transform: "translateY(10px)" },
+          "to": { opacity: "1", transform: "translateY(0)" },
         },
       },
     },
