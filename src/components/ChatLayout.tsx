@@ -384,7 +384,7 @@ export default function ChatLayout() {
             </div>
 
             {/* User Profile - At bottom */}
-            <div className="p-6 border-t border-subtle bg-surface-0/50">
+            <div className="p-6 border-t border-subtle bg-surface-1">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-subtle bg-surface-2 flex-shrink-0">
                   {profile?.email ? (
@@ -441,30 +441,43 @@ export default function ChatLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 relative">
-        {/* Chat Messages - Full height with proper padding */}
-        <div className="flex items-center justify-center h-full px-6">
-          <div className="text-center space-y-4 max-w-md"> {/* Adjusted space-y for overall compactness */}
-            {/* New wrapper for icon and text to manage their relative positioning */}
-            <div className="flex flex-col items-center"> 
-              <MessageSquareIcon className="h-20 w-20 text-accent-primary mb-4" /> {/* Add bottom margin to icon */}
-              <div> {/* This div now explicitly wraps the text elements */}
-                <h2 className="text-3xl font-bold text-primary mb-0"> {/* Reduced mb-6 to mb-2 */}
-                  Welcome to R3Chat
-                </h2>
-                <p className="text-secondary leading-relaxed text-lg">
-                  Support us coz AI ain't cheap!
-                </p>
+        {/* Conditional rendering for Welcome Screen OR Message List */}
+        {chatState.type === "home" ? (
+          <div className="flex items-center justify-center h-full px-6">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="flex flex-col items-center">
+                <MessageSquareIcon className="h-16 w-16 text-accent-primary mb-3" />
+                <div>
+                  <h2 className="text-3xl font-semibold text-primary mb-1">
+                    Welcome to R3Chat
+                  </h2>
+                  <p className="text-center text-secondary leading-relaxed text-base max-w-xs mx-auto">
+                    Support us coz AI ain't cheap!
+                  </p>
+                </div>
               </div>
+              <Button
+                onClick={handleNewChat}
+                className="btn-primary px-6 py-3 text-base mt-4"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Start New Chat
+              </Button>
             </div>
-            <Button
-              onClick={handleNewChat}
-              className="btn-primary px-8 py-4 text-lg"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Start New Chat
-            </Button>
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-6 animate-fade-in"> {/* This is the new Message List container */}
+            {streamMessages.map((message, index) => (
+              <div
+                key={message.id || `message-${index}`}
+                className={`${message.role === "user" ? "message-user" : "message-assistant"} animate-message-in`}
+              >
+                {message.content}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
 
         {/* Enhanced Input Area - Fixed at bottom */}
         <div className="absolute bottom-6 left-6 right-6">
@@ -489,7 +502,7 @@ export default function ChatLayout() {
                   <select
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
-                    className="btn-secondary"
+                    className="chat-model-selector"
                     disabled={isStreaming}
                   >
                     {MODEL_OPTIONS.map((model) => (
@@ -508,7 +521,7 @@ export default function ChatLayout() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 w-9 p-0 btn-ghost"
+                    className="h-8 w-8 p-0 btn-ghost"
                     title="Attach file (.txt, .md)"
                   >
                     <PaperclipIcon className="h-4 w-4" />
@@ -520,7 +533,7 @@ export default function ChatLayout() {
                   {isStreaming ? (
                     <Button
                       onClick={stopStreaming}
-                      className="h-9 w-9 p-0 bg-error hover:bg-error/80 text-white border-0"
+                      className="h-8 w-8 p-0 bg-error hover:bg-error/80 text-white border-0 flex items-center justify-center rounded-md"
                       title="Stop generation"
                     >
                       <StopCircleIcon className="h-4 w-4" />
@@ -529,7 +542,7 @@ export default function ChatLayout() {
                     <Button
                       onClick={handleSendMessage}
                       disabled={!inputValue.trim()}
-                      className={`h-9 w-9 p-0 border-0 ${
+                      className={`h-8 w-8 p-0 border-0 flex items-center justify-center rounded-md ${
                         inputValue.trim()
                           ? "btn-primary"
                           : "bg-surface-2 text-muted cursor-not-allowed"
