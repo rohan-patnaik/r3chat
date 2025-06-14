@@ -33,7 +33,7 @@ const config: Config = {
         // Status colors (theme-aware)
         success: "var(--success)",
         warning: "var(--warning)",
-        error: "var(--error)",
+        error: "var(--danger-warning)", // Updated to use --danger-warning
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

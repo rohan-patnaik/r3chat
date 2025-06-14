@@ -8,7 +8,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-accent-primary text-white shadow hover:bg-accent-hover",
+        default: "bg-accent-primary text-[var(--btn-primary-text)] shadow hover:bg-accent-hover", // Use CSS var for text
         destructive: "bg-error text-white shadow-sm hover:brightness-90",
         outline: "border border-subtle bg-transparent shadow-sm hover:bg-surface-2 hover:text-primary",
         secondary: "bg-surface-2 text-primary shadow-sm hover:bg-surface-1",
