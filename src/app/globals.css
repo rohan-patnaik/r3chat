@@ -1,36 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  /* Light Theme Changes */
-  --surface-0: #FFFFFF;
-  --surface-0-rgb: 255, 255, 255;
-  --surface-1: #F7F7F8;
-  --surface-1-rgb: 247, 247, 248;
-  --surface-2: #EFF0F1;
-  --surface-3: #E4E6E8;
+  /* New Brown Theme - Light */
+  --surface-0: #f5f2ef; /* Background */
+  --surface-0-rgb: 245, 242, 239;
+  --surface-1: #ffffff; /* Component Background */
+  --surface-1-rgb: 255, 255, 255; /* Assuming this might be needed, from previous pattern */
+  --surface-2: #f0e9e4; /* Alternative Component Background */
+  /* --surface-3: #E4E6E8; */ /* Old color, commented out */
   
-  --accent-primary-rgb: 0, 122, 255;
+  --text-primary: #3a3633;
+  --text-secondary: #8d837c;
+  /* --text-tertiary: #8A8B8F; */ /* Old color, commented out */
+  /* --text-muted: #B1B2B5; */ /* Old color, commented out */
+  --btn-primary-text: #FFFFFF; /* For light theme primary button text */
   
-  --text-primary: #1A1B1F;
-  --text-secondary: #58595E;
-  --text-tertiary: #8A8B8F;
-  --text-muted: #B1B2B5;
+  --accent-primary: #6b4f41;
+  --accent-primary-rgb: 107, 79, 65;
+  --accent-hover: #5a3f31; /* Slightly darker for light theme */
+  /* --accent-light: #409CFF; */ /* Old color, commented out */
   
-  --accent-primary: #007AFF;
-  --accent-hover: #0056B3;
-  --accent-light: #409CFF;
+  --border-subtle: #dcd8d3;
+  /* --border-primary: #B8BCC0; */ /* Old color, commented out */
+  /* --border-strong: #9A9DA1; */ /* Old color, commented out */
   
-  --border-subtle: #DCDFE3;
-  --border-primary: #B8BCC0;
-  --border-strong: #9A9DA1;
-  
-  --success: #28A745;
-  --warning: #FFC107;
-  --error: #DC3545;
+  --success: #28A745; /* Unchanged, assuming out of scope */
+  --warning: #FFC107; /* Unchanged, assuming out of scope */
+  --danger-warning: #c05758; /* New error color */
+  /* --error: #DC3545; */ /* Old error color, commented out */
 
-  --shadow-sm: 0 1px 2px rgba(26, 27, 31, 0.05);
-  --shadow-md: 0 3px 6px rgba(26, 27, 31, 0.07);
-  --shadow-lg: 0 6px 12px rgba(26, 27, 31, 0.1);
+  --shadow-sm: 0 1px 2px rgba(26, 27, 31, 0.05); /* Unchanged, assuming out of scope for color theme */
+  --shadow-md: 0 3px 6px rgba(26, 27, 31, 0.07); /* Unchanged, assuming out of scope for color theme */
+  --shadow-lg: 0 6px 12px rgba(26, 27, 31, 0.1); /* Unchanged, assuming out of scope for color theme */
   
   /* Enhanced spacing system */
   --spacing-xs: 4px;
@@ -53,36 +54,37 @@
 }
 
 .dark {
-  /* Dark Theme Changes */
-  --surface-0: #18191D;
-  --surface-0-rgb: 24, 25, 29;
-  --surface-1: #202125;
-  --surface-1-rgb: 32, 33, 37;
-  --surface-2: #2D2E32;
-  --surface-3: #3A3B3F;
+  /* New Brown Theme - Dark */
+  --surface-0: #1c1a19; /* Background */
+  --surface-0-rgb: 28, 26, 25;
+  --surface-1: #2a2726; /* Component Background */
+  --surface-1-rgb: 42, 39, 38; /* Assuming this might be needed, from previous pattern */
+  --surface-2: #3a3633; /* Alternative Component Background / Borders */
+  /* --surface-3: #3A3B3F; */ /* Old color, commented out */
 
-  --accent-primary-rgb: 10, 132, 255;
+  --text-primary: #f0e9e4;
+  --text-secondary: #a19a94;
+  /* --text-tertiary: #7D7E81; */ /* Old color, commented out */
+  /* --text-muted: #636467; */ /* Old color, commented out */
+  --btn-primary-text: var(--text-primary); /* For dark theme primary button text */
   
-  --text-primary: #F5F6F7;
-  --text-secondary: #A9AAAE;
-  --text-tertiary: #7D7E81;
-  --text-muted: #636467;
+  --accent-primary: #8a6d5f;
+  --accent-primary-rgb: 138, 109, 95;
+  --accent-hover: #9b7e70; /* Slightly lighter for dark theme */
+  /* --accent-light: #50A5FF; */ /* Old color, commented out */
   
-  --accent-primary: #0A84FF;
-  --accent-hover: #0060D1;
-  --accent-light: #50A5FF;
+  --border-subtle: #3a3633;
+  /* --border-primary: #4A4B4F; */ /* Old color, commented out */
+  /* --border-strong: #5A5B5F; */ /* Old color, commented out */
   
-  --border-subtle: #3A3B3F;
-  --border-primary: #4A4B4F;
-  --border-strong: #5A5B5F;
+  --success: #28A745; /* Unchanged, assuming out of scope */
+  --warning: #FFC107; /* Unchanged, assuming out of scope */
+  --danger-warning: #9e2a2b; /* New error color */
+  /* --error: #DC3545; */ /* Old error color, commented out */
   
-  --success: #28A745;
-  --warning: #FFC107;
-  --error: #DC3545;
-  
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15);
-  --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15); /* Unchanged, assuming out of scope for color theme */
+  --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.2); /* Unchanged, assuming out of scope for color theme */
+  --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.25); /* Unchanged, assuming out of scope for color theme */
 }
 
 * {
@@ -128,21 +130,21 @@ body {
 .surface-0 { background: var(--surface-0); }
 .surface-1 { background: var(--surface-1); }
 .surface-2 { background: var(--surface-2); }
-.surface-3 { background: var(--surface-3); }
+/* .surface-3 { background: var(--surface-3); } */ /* Variable commented out */
 
 .text-primary { color: var(--text-primary); }
 .text-secondary { color: var(--text-secondary); }
-.text-tertiary { color: var(--text-tertiary); }
-.text-muted { color: var(--text-muted); }
+/* .text-tertiary { color: var(--text-tertiary); } */ /* Variable commented out */
+/* .text-muted { color: var(--text-muted); } */ /* Variable commented out */
 
 .border-subtle { border-color: var(--border-subtle); }
-.border-primary { border-color: var(--border-primary); }
-.border-strong { border-color: var(--border-strong); }
+/* .border-primary { border-color: var(--border-primary); } */ /* Variable commented out */
+/* .border-strong { border-color: var(--border-strong); } */ /* Variable commented out */
 
 /* Enhanced button styles */
 .btn-primary {
   background: var(--accent-primary);
-  color: white;
+  color: var(--btn-primary-text);
   border: none;
   border-radius: 8px;
   padding: var(--spacing-md) var(--spacing-xl);
@@ -172,10 +174,12 @@ body {
 }
 
 .btn-secondary:hover {
-  background: var(--surface-3);
-  border-color: var(--border-primary);
+  background: var(--surface-1); /* Align with CVA secondary hover */
+  /* border-color: var(--border-subtle); */ /* Keep original border color from .btn-secondary */
   transform: translateY(-1px);
 }
+
+/* .dark .btn-secondary:hover styling is removed, single rule above should be sufficient with CSS vars */
 
 .btn-ghost {
   background: transparent;
@@ -213,12 +217,12 @@ body {
 }
 
 .input-field::placeholder {
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .input-field:disabled {
   background: var(--surface-2);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: not-allowed;
 }
 
@@ -250,8 +254,8 @@ body {
 
 /* Chat input container */
 .chat-input-container {
-  background: rgba(var(--surface-0-rgb), 0.75);
-  backdrop-filter: blur(16px);
+  background: var(--surface-0); /* Changed from rgba to direct surface color */
+  /* backdrop-filter: blur(16px); */ /* Removed as textarea will be opaque */
   border: 1px solid var(--border-subtle);
   border-radius: 20px;
   box-shadow: var(--shadow-md);
@@ -259,11 +263,11 @@ body {
 }
 
 .dark .chat-input-container {
-  background: rgba(var(--surface-0-rgb), 0.75);
+  background: var(--surface-0); /* Changed from rgba to direct surface color */
 }
 
 .chat-input-textarea {
-  background: transparent;
+  background: var(--surface-1); /* Changed from transparent to surface-1 */
   border: none;
   outline: none;
   resize: none;
@@ -277,7 +281,7 @@ body {
 }
 
 .chat-input-textarea::placeholder {
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .chat-controls-bar {
@@ -292,7 +296,7 @@ body {
 
 /* Chat Model Selector */
 .chat-model-selector {
-  background-color: var(--surface-2);
+  background-color: var(--surface-1); /* Changed from surface-2 to surface-1 */
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   border-radius: 8px; /* Match other inputs/buttons */
@@ -310,12 +314,16 @@ body {
   padding-right: calc(var(--spacing-md) + var(--spacing-lg) + 8px); /* Ensure space for icon */
 }
 .chat-model-selector:hover {
-  background-color: var(--surface-3);
-  border-color: var(--border-primary);
+  background-color: var(--border-subtle); /* Light theme: darker than surface-2 */
+  border-color: var(--accent-primary);
+}
+.dark .chat-model-selector:hover {
+  background-color: #3c3837; /* Dark theme: custom darker shade */
+  border-color: var(--accent-primary);
 }
 .chat-model-selector:disabled {
   background-color: var(--surface-1);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: not-allowed;
   opacity: 0.7;
 }
@@ -350,14 +358,14 @@ body {
 
 .conversation-item.active {
   background: var(--accent-primary);
-  color: white;
+  color: var(--btn-primary-text); /* Updated for better contrast on new accent */
 }
 
 /* Section headers */
 .section-header {
   font-size: var(--font-size-xs);
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin: var(--spacing-lg) 0 var(--spacing-sm) var(--spacing-sm);

@@ -14,6 +14,13 @@ import {
   PaperclipIcon,
   MenuIcon,
   SearchIcon,
+  PanelLeftClose,
+  PanelRightOpen,
+  ZapIcon,      // For Create button
+  GlobeIcon,    // For Explore button
+  Code2Icon,    // For Code button
+  BookOpenCheckIcon, // For Learn button
+  ArrowUpIcon, // For Send button
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useConversations } from "@/lib/hooks/useConversations";
@@ -273,7 +280,7 @@ export default function ChatLayout() {
                     onClick={() => setSidebarCollapsed(true)}
                     className="h-8 w-8 p-0 btn-ghost"
                   >
-                    <MenuIcon className="h-4 w-4" />
+                    <PanelLeftClose className="h-4 w-4 text-text-primary" />
                   </Button>
                   <h1 className="text-xl font-bold text-primary">R3Chat</h1>
                 </div>
@@ -284,7 +291,7 @@ export default function ChatLayout() {
                   className="h-8 w-8 p-0 btn-ghost"
                   title="Sign out"
                 >
-                  <LogOutIcon className="h-5 w-5" />
+                  <LogOutIcon className="h-5 w-5 text-text-primary" />
                 </Button>
               </div>
               <Button
@@ -301,10 +308,10 @@ export default function ChatLayout() {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search Chats"
+                    placeholder="Search your threads..."
                     className="input-field pl-10"
                   />
-                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
+                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-secondary" />
                 </div>
               </div>
             </div>
@@ -345,6 +352,8 @@ export default function ChatLayout() {
                               />
                             ) : (
                               <div className="flex items-center justify-between">
+                                {/* Placeholder for future icon */}
+                                {/* <MessageSquareIcon className="mr-2 h-4 w-4 text-text-secondary flex-shrink-0" /> */}
                                 <span className="text-sm font-medium truncate flex-1">
                                   {conversation.title || "New Chat"}
                                 </span>
@@ -407,7 +416,7 @@ export default function ChatLayout() {
                     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                       profile?.account_type === "guest" 
                         ? "bg-surface-2 text-secondary" 
-                        : "bg-accent-primary text-white"
+                        : "bg-accent-primary text-[var(--btn-primary-text)]"
                     }`}>
                       {profile?.account_type === "guest" ? "Free" : "Pro"}
                     </span>
@@ -435,7 +444,7 @@ export default function ChatLayout() {
           onClick={() => setSidebarCollapsed(false)}
           className="fixed top-6 left-6 z-50 h-10 w-10 p-0 btn-ghost bg-surface-1/80 backdrop-blur-sm border border-subtle/50"
         >
-          <MenuIcon className="h-5 w-5" />
+          <PanelRightOpen className="h-5 w-5 text-text-primary" />
         </Button>
       )}
 
@@ -443,26 +452,64 @@ export default function ChatLayout() {
       <div className="flex-1 flex flex-col min-w-0 relative">
         {/* Conditional rendering for Welcome Screen OR Message List */}
         {chatState.type === "home" ? (
-          <div className="flex items-center justify-center h-full px-6">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="flex flex-col items-center">
-                <MessageSquareIcon className="h-16 w-16 text-accent-primary mb-3" />
-                <div>
-                  <h2 className="text-3xl font-semibold text-primary mb-1">
-                    Welcome to R3Chat
-                  </h2>
-                  <p className="text-center text-secondary leading-relaxed text-base max-w-xs mx-auto">
-                    Support us coz AI ain't cheap!
-                  </p>
-                </div>
-              </div>
-              <Button
-                onClick={handleNewChat}
-                className="btn-primary px-6 py-3 text-base mt-4"
+          // New Empty State Structure
+          <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+            {/* Personalized Greeting */}
+            <h2 className="text-3xl font-semibold text-text-primary mb-8">
+              How can I help you, {userName}?
+            </h2>
+
+            {/* Action Buttons Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12 max-w-2xl w-full">
+              {/* Button 1: Create */}
+              <button
+                onClick={() => { setInputValue("Suggest fun activities"); textareaRef.current?.focus(); }}
+                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Start New Chat
-              </Button>
+                <ZapIcon className="h-8 w-8" />
+                <span className="text-sm font-medium">Create</span>
+              </button>
+              {/* Button 2: Explore */}
+              <button
+                onClick={() => { setInputValue("Tell me about historical events"); textareaRef.current?.focus(); }}
+                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+              >
+                <GlobeIcon className="h-8 w-8" />
+                <span className="text-sm font-medium">Explore</span>
+              </button>
+              {/* Button 3: Code */}
+              <button
+                onClick={() => { setInputValue("Write a python script for"); textareaRef.current?.focus(); }}
+                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+              >
+                <Code2Icon className="h-8 w-8" />
+                <span className="text-sm font-medium">Code</span>
+              </button>
+              {/* Button 4: Learn */}
+              <button
+                onClick={() => { setInputValue("Explain the concept of"); textareaRef.current?.focus(); }}
+                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+              >
+                <BookOpenCheckIcon className="h-8 w-8" />
+                <span className="text-sm font-medium">Learn</span>
+              </button>
+            </div>
+
+            {/* Suggested Prompts */}
+            <div className="space-y-3 max-w-md w-full">
+              <h3 className="text-lg font-medium text-text-secondary mb-3">Or try these:</h3>
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How does AI work?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+                How does AI work?
+              </a>
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Are black holes real?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+                Are black holes real?
+              </a>
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How many Rs are in the word \"strawberry\"?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+                How many Rs are in the word "strawberry"?
+              </a>
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("What is the meaning of life?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+                What is the meaning of life?
+              </a>
             </div>
           </div>
         ) : (
@@ -518,10 +565,20 @@ export default function ChatLayout() {
                   </select>
 
                   {/* Attachment Button */}
+                  {/* New Search Icon Button */}
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 btn-ghost"
+                    className="h-8 w-8 p-0 text-text-secondary hover:text-accent-primary"
+                    title="Search conversation (coming soon)"
+                  >
+                    <SearchIcon className="h-4 w-4" />
+                  </Button>
+                  {/* Updated Attach Icon Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-text-secondary hover:text-accent-primary"
                     title="Attach file (.txt, .md)"
                   >
                     <PaperclipIcon className="h-4 w-4" />
@@ -545,11 +602,11 @@ export default function ChatLayout() {
                       className={`h-8 w-8 p-0 border-0 flex items-center justify-center rounded-md ${
                         inputValue.trim()
                           ? "btn-primary"
-                          : "bg-surface-2 text-muted cursor-not-allowed"
+                          : "bg-surface-2 text-text-secondary cursor-not-allowed" // Updated disabled state class
                       }`}
                       title="Send message"
                     >
-                      <SendIcon className="h-4 w-4" />
+                      <ArrowUpIcon className="h-4 w-4" /> {/* Replaced SendIcon */}
                     </Button>
                   )}
                 </div>
