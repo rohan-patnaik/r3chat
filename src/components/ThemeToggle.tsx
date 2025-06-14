@@ -10,15 +10,15 @@ export function ThemeToggle() {
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="icon" // Using "icon" size for better consistency if defined in Button component
       onClick={toggleTheme}
-      className="h-8 w-8 p-0 btn-ghost"
+      className="h-10 w-10 rounded-full p-0 flex items-center justify-center btn-ghost"
       title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
     >
       {theme === "light" ? (
-        <MoonIcon className="h-4 w-4 text-text-primary" />
+        <MoonIcon className="h-5 w-5 text-text-primary" />
       ) : (
-        <SunIcon className="h-4 w-4 text-text-primary" />
+        <SunIcon className="h-5 w-5 text-text-primary" />
       )}
     </Button>
   );

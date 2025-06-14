@@ -21,6 +21,11 @@ import {
   SparklesIcon,
   XCircleIcon,
   LinkIcon,
+  BugIcon,
+  AlertCircleIcon,
+  UsersIcon,
+  ShieldIcon,
+  FileTextIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -201,9 +206,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-0">
+    <div className="min-h-screen bg-white"> {/* 1. Main page background to bg-white */}
       {/* Header */}
-      <div className="border-b border-subtle bg-surface-0 px-6 py-4">
+      <div className="border-b border-subtle bg-white px-6 py-4"> {/* Header bg also to white for consistency */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button
@@ -234,9 +239,10 @@ export default function SettingsPage() {
 
       <div className="flex">
         {/* Left Sidebar */}
-        <div className="w-80 border-r border-subtle bg-surface-0 p-6">
+        <div className="w-80 border-r border-border-subtle bg-surface-1 p-6"> {/* Sidebar bg to surface-1 (light grey) */}
           {/* User Profile Card */}
-          <div className="mb-6 rounded-lg border border-subtle bg-surface-1 p-6 text-center">
+          {/* 3.1. User Profile Card: bg-white, border-border-subtle, shadow-md */}
+          <div className="mb-6 rounded-lg border border-border-subtle bg-white p-6 text-center shadow-md">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-accent-primary text-white">
               <span className="text-2xl font-bold">
                 {profile?.display_name?.charAt(0)?.toUpperCase() ||
@@ -252,13 +258,15 @@ export default function SettingsPage() {
             <p className="mb-3 text-sm text-text-secondary">
               {profile?.email || "No email"}
             </p>
-            <span className="inline-block rounded-full bg-text-primary px-3 py-1 text-xs font-medium text-surface-0">
+            {/* 3.3. Plan Indicator Tag: bg-gray-800, text-white, px-2.5 py-0.5 */}
+            <span className="inline-block rounded-full bg-gray-800 px-2.5 py-0.5 text-xs font-medium text-white">
               {profile?.account_type === "guest" ? "Free Plan" : "Pro Plan"}
             </span>
           </div>
 
           {/* Message Usage Card */}
-          <div className="rounded-lg border border-subtle bg-surface-1 p-6">
+          {/* 3.2. Message Usage Card: bg-white, border-border-subtle, shadow-md */}
+          <div className="rounded-lg border border-border-subtle bg-white p-6 shadow-md">
             <h3 className="mb-2 text-lg font-semibold text-text-primary">
               Message Usage
             </h3>
@@ -330,19 +338,21 @@ export default function SettingsPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1">
-          {/* Tabs */}
-          <div className="border-b border-subtle bg-surface-0 px-6">
-            <nav className="flex space-x-8">
+        <div className="flex-1 p-6"> {/* Added p-6 here for overall padding for the main content area */}
+          {/* 4. Settings Tab Navigation */}
+          {/* 4.1. Container: bg-surface-1, rounded-lg, p-1, remove border-b */}
+          <div className="mb-6 rounded-lg bg-surface-1 p-1">
+            <nav className="flex space-x-1"> {/* 4. Tabs: space-x-1 for closer pill tabs */}
               {tabsConfig.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`border-b-2 py-4 text-sm font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? "border-accent-primary text-accent-primary"
-                      : "border-transparent text-text-secondary hover:text-text-primary"
-                  }`}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors focus:outline-none
+                    ${
+                      activeTab === tab.id
+                        ? "bg-white text-text-primary border border-border-subtle shadow-sm" // 4.2. Active Tab Styling
+                        : "bg-transparent text-text-secondary hover:bg-surface-2" // 4.2. Inactive Tab Styling
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -350,8 +360,8 @@ export default function SettingsPage() {
             </nav>
           </div>
 
-          {/* Tab Content */}
-          <div className="p-6">
+          {/* 2. Main Content Area (Central Settings Panel) - Card Wrapper */}
+          <div className="rounded-lg border border-border-subtle bg-white p-6 shadow-lg">
             {activeTab === "account" && (
               <div className="max-w-2xl space-y-8">
                 <div>
@@ -379,7 +389,7 @@ export default function SettingsPage() {
                   </p>
                   <Button
                     onClick={handleManageSubscription}
-                    className="bg-accent-primary text-white hover:bg-accent-hover"
+                    className="bg-text-primary text-white hover:bg-gray-700" // Updated to dark solid button
                   >
                     Manage Subscription
                     <ExternalLinkIcon className="ml-2 h-4 w-4" />
@@ -394,11 +404,11 @@ export default function SettingsPage() {
                     Permanently delete your account and all associated data. This action cannot be undone.
                   </p>
                   <Button
-                    variant="destructive"
+                    variant="destructive" // variant="destructive" likely handles appropriate red styling
                     onClick={() =>
                       alert("Account deletion initiated (placeholder). This is irreversible.")
                     }
-                    className="bg-danger-warning text-white hover:bg-danger-warning/90"
+                    className="bg-danger-warning text-white hover:bg-danger-warning/90" // Explicit classes ensuring solid red
                   >
                     Delete Account
                   </Button>
@@ -417,14 +427,15 @@ export default function SettingsPage() {
                   </p>
                 </div>
 
+                {/* 1. Action Buttons: light-grey, bordered, pill-shaped */}
                 <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" className="text-text-secondary">
+                  <Button className="rounded-full border border-border-subtle bg-surface-1 px-4 py-2 text-sm font-medium text-text-primary hover:bg-surface-2 hover:border-gray-400">
                     <ListFilterIcon className="mr-2 h-4 w-4" /> Filter by features
                   </Button>
-                  <Button variant="outline" className="text-text-secondary">
+                  <Button className="rounded-full border border-border-subtle bg-surface-1 px-4 py-2 text-sm font-medium text-text-primary hover:bg-surface-2 hover:border-gray-400">
                     <SparklesIcon className="mr-2 h-4 w-4" /> Select Recommended Models
                   </Button>
-                  <Button variant="outline" className="text-text-secondary">
+                  <Button className="rounded-full border border-border-subtle bg-surface-1 px-4 py-2 text-sm font-medium text-text-primary hover:bg-surface-2 hover:border-gray-400">
                     <XCircleIcon className="mr-2 h-4 w-4" /> Unselect All
                   </Button>
                 </div>
@@ -434,11 +445,10 @@ export default function SettingsPage() {
                     const modelState = modelSettings.find((m) => m.id === model.id);
                     const isEnabled = modelState?.enabled ?? model.enabled;
                     return (
+                      // 2.1. Individual Model Cards: bg-white, border-border-subtle, shadow-md
                       <div
                         key={model.id}
-                        className={`rounded-lg border p-4 ${
-                          isEnabled ? "border-accent-primary bg-surface-1" : "border-subtle bg-surface-1"
-                        }`}
+                        className="rounded-lg border border-border-subtle bg-white p-4 shadow-md"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -461,33 +471,29 @@ export default function SettingsPage() {
                               {model.features.map((feature) => (
                                 <span
                                   key={feature}
-                                  className="rounded-full border border-subtle bg-surface-0 px-2 py-1 text-xs text-text-secondary"
+                                  className="rounded-full border border-border-subtle bg-surface-1 px-2 py-1 text-xs text-text-secondary"
                                 >
                                   {feature}
                                 </span>
                               ))}
                             </div>
                           </div>
+                          {/* 2.2. Toggle Switch */}
                           <div className="ml-4">
-                            <label className="flex cursor-pointer items-center">
-                              <input
-                                type="checkbox"
-                                className="sr-only"
-                                checked={isEnabled}
-                                onChange={() => handleToggleModel(model.id)}
-                              />
-                              <div
-                                className={`relative h-6 w-10 rounded-full ${
-                                  isEnabled ? "bg-accent-primary" : "bg-border-subtle"
-                                }`}
-                              >
-                                <div
-                                  className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
-                                    isEnabled ? "translate-x-4" : "translate-x-1"
-                                  }`}
-                                ></div>
-                              </div>
-                            </label>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleModel(model.id)}
+                              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2
+                                ${isEnabled ? "bg-accent-primary" : "bg-gray-300"}`}
+                              role="switch"
+                              aria-checked={isEnabled}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+                                  ${isEnabled ? "translate-x-5" : "translate-x-0"}`}
+                              ></span>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -531,7 +537,8 @@ export default function SettingsPage() {
                     placeholderPrefix: "AIza",
                   },
                 ].map((item) => (
-                  <div key={item.provider} className="rounded-lg border border-subtle bg-surface-1 p-6">
+                  // 1. API Provider Sub-cards: bg-surface-1, border-border-subtle, shadow-md
+                  <div key={item.provider} className="rounded-lg border border-border-subtle bg-surface-1 p-6 shadow-md">
                     <h3 className="mb-2 text-lg font-semibold text-text-primary">
                       {item.name}
                     </h3>
@@ -539,7 +546,7 @@ export default function SettingsPage() {
                       {item.models.map((modelName) => (
                         <span
                           key={modelName}
-                          className="rounded-full border border-subtle bg-surface-0 px-2 py-1 text-xs text-text-secondary"
+                          className="rounded-full border border-border-subtle bg-surface-1 px-2 py-1 text-xs text-text-secondary" // Model tags in API key card to surface-1
                         >
                           {modelName}
                         </span>
@@ -560,7 +567,8 @@ export default function SettingsPage() {
                             ? "••••••••••••••••"
                             : `${item.placeholderPrefix}...`
                         }
-                        className="w-full rounded-md border border-subtle bg-surface-0 p-3 pr-12 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20"
+                        // 2. Input Fields: bg-white, border-border-subtle (already seems correct from previous diff)
+                        className="w-full rounded-md border border-border-subtle bg-white p-3 pr-12 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20"
                       />
                       <button
                         type="button"
@@ -585,10 +593,11 @@ export default function SettingsPage() {
                         {item.provider.charAt(0).toUpperCase() + item.provider.slice(1)} Console
                         <ExternalLinkIcon className="ml-1 h-3 w-3" />
                       </a>
+                      {/* 3. Save Button: bg-surface-2, text-text-primary, border-border-subtle */}
                       <Button
                         onClick={() => handleSaveApiKey(item.provider)}
                         disabled={isLoading || !apiKeys[item.provider]?.trim()}
-                        className="bg-accent-primary text-white hover:bg-accent-hover disabled:opacity-50"
+                        className="border border-border-subtle bg-surface-2 px-4 py-2 text-sm font-medium text-text-primary hover:bg-gray-300 disabled:opacity-50"
                       >
                         {isLoading ? "Saving..." : "Save"}
                       </Button>
@@ -600,13 +609,129 @@ export default function SettingsPage() {
 
             {(activeTab === "customization" ||
               activeTab === "history" ||
-              activeTab === "attachments" ||
-              activeTab === "contact") && (
+              activeTab === "attachments") && (
               <div>
                 <h2 className="mb-4 text-xl font-semibold text-text-primary">
                   {tabsConfig.find((t) => t.id === activeTab)?.label}
                 </h2>
                 <p className="text-text-secondary">This section is under construction.</p>
+              </div>
+            )}
+
+            {activeTab === "contact" && (
+              <div>
+                <h2 className="mb-6 text-2xl font-semibold text-text-primary">
+                  We&apos;re here to help!
+                </h2>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {/* Card 1: Feature Idea */}
+                  <a
+                    href="#" // Replace with actual link if available
+                    className="block rounded-lg border border-border-subtle bg-white p-6 shadow-md transition-shadow hover:shadow-lg"
+                  >
+                    <div className="flex items-start space-x-4">
+                      <SparklesIcon className="mt-1 h-8 w-8 flex-shrink-0 text-accent-primary" />
+                      <div>
+                        <h4 className="text-lg font-semibold text-text-primary">
+                          Have a cool feature idea?
+                        </h4>
+                        <p className="mt-1 text-sm text-text-secondary">
+                          Vote on upcoming features or suggest your own.
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Card 2: Non-critical Bug */}
+                  <a
+                    href="#" // Replace with actual link if available
+                    className="block rounded-lg border border-border-subtle bg-white p-6 shadow-md transition-shadow hover:shadow-lg"
+                  >
+                    <div className="flex items-start space-x-4">
+                      <BugIcon className="mt-1 h-8 w-8 flex-shrink-0 text-accent-primary" />
+                      <div>
+                        <h4 className="text-lg font-semibold text-text-primary">
+                          Found a non-critical bug?
+                        </h4>
+                        <p className="mt-1 text-sm text-text-secondary">
+                          UI glitches or formatting issues? Report them here :)
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Card 3: Account/Billing Issues */}
+                  <a
+                    href="mailto:support@ping.gg"
+                    className="block rounded-lg border border-border-subtle bg-white p-6 shadow-md transition-shadow hover:shadow-lg"
+                  >
+                    <div className="flex items-start space-x-4">
+                      <AlertCircleIcon className="mt-1 h-8 w-8 flex-shrink-0 text-accent-primary" />
+                      <div>
+                        <h4 className="text-lg font-semibold text-text-primary">
+                          Having account or billing issues?
+                        </h4>
+                        <p className="mt-1 text-sm text-text-secondary">
+                          Email us for priority support - support@ping.gg
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Card 4: Community/Discord */}
+                  <a
+                    href="#" // Replace with Discord server link
+                    className="block rounded-lg border border-border-subtle bg-white p-6 shadow-md transition-shadow hover:shadow-lg"
+                  >
+                    <div className="flex items-start space-x-4">
+                      <UsersIcon className="mt-1 h-8 w-8 flex-shrink-0 text-accent-primary" />
+                      <div>
+                        <h4 className="text-lg font-semibold text-text-primary">
+                          Want to join the community?
+                        </h4>
+                        <p className="mt-1 text-sm text-text-secondary">
+                          Come hang out in our Discord! Chat with the team and other users.
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Card 5: Privacy Policy */}
+                  <a
+                    href="#" // Replace with Privacy Policy link
+                    className="block rounded-lg border border-border-subtle bg-white p-6 shadow-md transition-shadow hover:shadow-lg"
+                  >
+                    <div className="flex items-start space-x-4">
+                      <ShieldIcon className="mt-1 h-8 w-8 flex-shrink-0 text-accent-primary" />
+                      <div>
+                        <h4 className="text-lg font-semibold text-text-primary">
+                          Privacy Policy
+                        </h4>
+                        <p className="mt-1 text-sm text-text-secondary">
+                          Read our privacy policy and data handling practices.
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Card 6: Terms of Service */}
+                  <a
+                    href="#" // Replace with ToS link
+                    className="block rounded-lg border border-border-subtle bg-white p-6 shadow-md transition-shadow hover:shadow-lg"
+                  >
+                    <div className="flex items-start space-x-4">
+                      <FileTextIcon className="mt-1 h-8 w-8 flex-shrink-0 text-accent-primary" />
+                      <div>
+                        <h4 className="text-lg font-semibold text-text-primary">
+                          Terms of Service
+                        </h4>
+                        <p className="mt-1 text-sm text-text-secondary">
+                          Review our terms of service and usage guidelines.
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+                </div>
               </div>
             )}
           </div>

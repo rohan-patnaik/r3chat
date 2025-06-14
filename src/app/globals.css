@@ -1,39 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  /* New Brown Theme - Light */
-  --surface-0: #f5f2ef; /* Background */
-  --surface-0-rgb: 245, 242, 239;
-  --surface-1: #ffffff; /* Component Background */
-  --surface-1-rgb: 255, 255, 255; /* Assuming this might be needed, from previous pattern */
-  --surface-2: #f0e9e4; /* Alternative Component Background */
-  /* --surface-3: #E4E6E8; */ /* Old color, commented out */
+  /* Light Theme */
+  --surface-0: #FFFFFF; /* Main page background */
+  --surface-1: #F0F2F5; /* Card/container backgrounds */
+  --surface-2: #E9ECEF; /* Alternative component background / borders */
   
-  --text-primary: #3a3633;
-  --text-secondary: #8d837c;
-  /* --text-tertiary: #8A8B8F; */ /* Old color, commented out */
-  /* --text-muted: #B1B2B5; */ /* Old color, commented out */
-  --btn-primary-text: #FFFFFF; /* For light theme primary button text */
+  --text-primary: #1A1B1F; /* Main text */
+  --text-secondary: #5A5B5F; /* Secondary text */
+  --btn-primary-text: #FFFFFF; /* Text for primary buttons */
   
-  --accent-primary: #6b4f41;
-  --accent-primary-rgb: 107, 79, 65;
-  --accent-hover: #5a3f31; /* Slightly darker for light theme */
-  /* --accent-light: #409CFF; */ /* Old color, commented out */
+  --accent-primary: #007AFF; /* Primary accent */
+  --accent-primary-rgb: 0, 122, 255; /* RGB for accent-primary */
+  --accent-hover: #0056B3; /* Hover state for primary accent */
   
-  --border-subtle: #dcd8d3;
-  /* --border-primary: #B8BCC0; */ /* Old color, commented out */
-  /* --border-strong: #9A9DA1; */ /* Old color, commented out */
+  --border-subtle: #DCDFE4; /* Borders */
   
-  --success: #28A745; /* Unchanged, assuming out of scope */
-  --warning: #FFC107; /* Unchanged, assuming out of scope */
-  --danger-warning: #c05758; /* New error color */
-  /* --error: #DC3545; */ /* Old error color, commented out */
+  --success: #28A745; /* Unchanged */
+  --warning: #FFC107; /* Unchanged */
+  --danger-warning: #DC3545; /* Error/destructive action color */
 
-  --shadow-sm: 0 1px 2px rgba(26, 27, 31, 0.05); /* Unchanged, assuming out of scope for color theme */
-  --shadow-md: 0 3px 6px rgba(26, 27, 31, 0.07); /* Unchanged, assuming out of scope for color theme */
-  --shadow-lg: 0 6px 12px rgba(26, 27, 31, 0.1); /* Unchanged, assuming out of scope for color theme */
+  --shadow-sm: 0 1px 2px rgba(26, 27, 31, 0.05); /* Unchanged */
+  --shadow-md: 0 3px 6px rgba(26, 27, 31, 0.07); /* Unchanged */
+  --shadow-lg: 0 6px 12px rgba(26, 27, 31, 0.1); /* Unchanged */
   
-  /* Enhanced spacing system */
+  /* Spacing system */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 12px;
@@ -54,37 +45,28 @@
 }
 
 .dark {
-  /* New Brown Theme - Dark */
-  --surface-0: #1c1a19; /* Background */
-  --surface-0-rgb: 28, 26, 25;
-  --surface-1: #2a2726; /* Component Background */
-  --surface-1-rgb: 42, 39, 38; /* Assuming this might be needed, from previous pattern */
-  --surface-2: #3a3633; /* Alternative Component Background / Borders */
-  /* --surface-3: #3A3B3F; */ /* Old color, commented out */
+  /* Dark Theme */
+  --surface-0: #121212;
+  --surface-1: #1E1E1E;
+  --surface-2: #2C2C2C;
 
-  --text-primary: #f0e9e4;
-  --text-secondary: #a19a94;
-  /* --text-tertiary: #7D7E81; */ /* Old color, commented out */
-  /* --text-muted: #636467; */ /* Old color, commented out */
-  --btn-primary-text: var(--text-primary); /* For dark theme primary button text */
+  --text-primary: #E0E0E0;
+  --text-secondary: #A0A0A0;
+  --btn-primary-text: #FFFFFF;
   
-  --accent-primary: #8a6d5f;
-  --accent-primary-rgb: 138, 109, 95;
-  --accent-hover: #9b7e70; /* Slightly lighter for dark theme */
-  /* --accent-light: #50A5FF; */ /* Old color, commented out */
+  --accent-primary: #2592FF; /* Lighter blue for dark mode */
+  --accent-primary-rgb: 37, 146, 255; /* RGB for accent-primary in dark mode */
+  --accent-hover: #1E7ADF;
   
-  --border-subtle: #3a3633;
-  /* --border-primary: #4A4B4F; */ /* Old color, commented out */
-  /* --border-strong: #5A5B5F; */ /* Old color, commented out */
+  --border-subtle: #3A3A3A;
   
-  --success: #28A745; /* Unchanged, assuming out of scope */
-  --warning: #FFC107; /* Unchanged, assuming out of scope */
-  --danger-warning: #9e2a2b; /* New error color */
-  /* --error: #DC3545; */ /* Old error color, commented out */
+  --success: #28A745; /* Unchanged */
+  --warning: #FFC107; /* Unchanged */
+  --danger-warning: #EF4444; /* Brighter red for dark mode */
   
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15); /* Unchanged, assuming out of scope for color theme */
-  --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.2); /* Unchanged, assuming out of scope for color theme */
-  --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.25); /* Unchanged, assuming out of scope for color theme */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15); /* Unchanged */
+  --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.2); /* Unchanged */
+  --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.25); /* Unchanged */
 }
 
 * {
@@ -130,18 +112,13 @@ body {
 .surface-0 { background: var(--surface-0); }
 .surface-1 { background: var(--surface-1); }
 .surface-2 { background: var(--surface-2); }
-/* .surface-3 { background: var(--surface-3); } */ /* Variable commented out */
 
 .text-primary { color: var(--text-primary); }
 .text-secondary { color: var(--text-secondary); }
-/* .text-tertiary { color: var(--text-tertiary); } */ /* Variable commented out */
-/* .text-muted { color: var(--text-muted); } */ /* Variable commented out */
 
 .border-subtle { border-color: var(--border-subtle); }
-/* .border-primary { border-color: var(--border-primary); } */ /* Variable commented out */
-/* .border-strong { border-color: var(--border-strong); } */ /* Variable commented out */
 
-/* Enhanced button styles */
+/* Button styles */
 .btn-primary {
   background: var(--accent-primary);
   color: var(--btn-primary-text);
@@ -174,12 +151,9 @@ body {
 }
 
 .btn-secondary:hover {
-  background: var(--surface-1); /* Align with CVA secondary hover */
-  /* border-color: var(--border-subtle); */ /* Keep original border color from .btn-secondary */
+  background: var(--surface-1);
   transform: translateY(-1px);
 }
-
-/* .dark .btn-secondary:hover styling is removed, single rule above should be sufficient with CSS vars */
 
 .btn-ghost {
   background: transparent;
@@ -213,7 +187,7 @@ body {
 .input-field:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.25);
+  box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.25); /* Uses accent-primary-rgb */
 }
 
 .input-field::placeholder {
@@ -468,7 +442,7 @@ body {
 }
 
 .model-card:hover {
-  border-color: var(--border-primary);
+  /* border-color: var(--border-primary); */ /* border-primary is removed */
   box-shadow: var(--shadow-md);
 }
 
@@ -495,7 +469,8 @@ body {
 /* Progress bar */
 .progress-bar {
   width: 100%;
-  background: var(--surface-3);
+  /* background: var(--surface-3); */ /* surface-3 is removed */
+  background: var(--surface-2); /* Using surface-2 as a replacement */
   border-radius: 8px;
   height: 8px;
   overflow: hidden;

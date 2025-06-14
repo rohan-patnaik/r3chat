@@ -21,6 +21,7 @@ import {
   Code2Icon,    // For Code button
   BookOpenCheckIcon, // For Learn button
   ArrowUpIcon, // For Send button
+  ArrowDownIcon, // For Scroll to Bottom button
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useConversations } from "@/lib/hooks/useConversations";
@@ -72,8 +73,10 @@ export default function ChatLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false); // 6. State for scroll to bottom
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageListRef = useRef<HTMLDivElement>(null); // 6. Ref for message list
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const resizerRef = useRef<HTMLDivElement>(null);
@@ -117,6 +120,25 @@ export default function ChatLayout() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [streamMessages]);
+
+  // 6. Scroll to bottom button visibility logic
+  useEffect(() => {
+    const listEl = messageListRef.current;
+    if (!listEl) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = listEl;
+      // Show button if scrolled up more than 200px (arbitrary value)
+      if (scrollHeight - scrollTop - clientHeight > 200) {
+        setShowScrollToBottom(true);
+      } else {
+        setShowScrollToBottom(false);
+      }
+    };
+
+    listEl.addEventListener("scroll", handleScroll);
+    return () => listEl.removeEventListener("scroll", handleScroll);
+  }, [streamMessages]); // Re-check on new messages as scrollHeight might change
 
   // Sidebar resizing logic
   useEffect(() => {
@@ -282,7 +304,8 @@ export default function ChatLayout() {
                   >
                     <PanelLeftClose className="h-4 w-4 text-text-primary" />
                   </Button>
-                  <h1 className="text-xl font-bold text-primary">R3Chat</h1>
+                  {/* 1. App Title: "T3.chat" */}
+                  <h1 className="text-xl font-bold text-text-primary">T3.chat</h1>
                 </div>
                 <Button
                   variant="ghost"
@@ -294,9 +317,10 @@ export default function ChatLayout() {
                   <LogOutIcon className="h-5 w-5 text-text-primary" />
                 </Button>
               </div>
+              {/* 2. Sidebar - "New Chat" Button: Verify styling (btn-primary should be fine) */}
               <Button
                 onClick={handleNewChat}
-                className="w-full btn-primary mb-4"
+                className="w-full btn-primary mb-4" // Assuming btn-primary is: bg-accent-primary text-btn-primary-text hover:bg-accent-hover
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 New Chat
@@ -392,31 +416,32 @@ export default function ChatLayout() {
               ))}
             </div>
 
-            {/* User Profile - At bottom */}
-            <div className="p-6 border-t border-subtle bg-surface-1">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-subtle bg-surface-2 flex-shrink-0">
+            {/* 3. Sidebar - User Profile Section (Bottom) */}
+            <div className="p-4 border-t border-border-subtle bg-surface-0"> {/* Reduced padding, bg-surface-0 (white) */}
+              <div className="flex items-center space-x-2"> {/* Reduced space-x */}
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-border-subtle bg-surface-1 flex-shrink-0"> {/* Slightly smaller avatar, bg-surface-1 for placeholder */}
                   {profile?.email ? (
                     <img
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=D2691E&color=fff&size=48`}
+                      // Avatar background changed to a neutral dark grey
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=333333&color=fff&size=40`}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary">U</span>
+                      <span className="text-sm font-medium text-text-primary">U</span>
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-primary truncate">
+                  <p className="text-sm font-medium text-text-primary truncate">
                     {userName}
                   </p>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="flex items-center space-x-2 mt-0.5"> {/* Reduced mt */}
                     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                       profile?.account_type === "guest" 
-                        ? "bg-surface-2 text-secondary" 
-                        : "bg-accent-primary text-[var(--btn-primary-text)]"
+                        ? "bg-gray-200 text-gray-700" // Guest: light grey bg, darker grey text
+                        : "bg-accent-primary text-btn-primary-text" // Pro: accent bg, white text
                     }`}>
                       {profile?.account_type === "guest" ? "Free" : "Pro"}
                     </span>
@@ -462,9 +487,10 @@ export default function ChatLayout() {
             {/* Action Buttons Row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12 max-w-2xl w-full">
               {/* Button 1: Create */}
+              {/* 4. Chat Welcome Screen - Action Suggestions: light grey, bordered, pill-shaped */}
               <button
                 onClick={() => { setInputValue("Suggest fun activities"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-primary border border-border-subtle rounded-xl hover:bg-surface-2 hover:border-gray-400 transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
               >
                 <ZapIcon className="h-8 w-8" />
                 <span className="text-sm font-medium">Create</span>
@@ -472,7 +498,7 @@ export default function ChatLayout() {
               {/* Button 2: Explore */}
               <button
                 onClick={() => { setInputValue("Tell me about historical events"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-primary border border-border-subtle rounded-xl hover:bg-surface-2 hover:border-gray-400 transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
               >
                 <GlobeIcon className="h-8 w-8" />
                 <span className="text-sm font-medium">Explore</span>
@@ -480,7 +506,7 @@ export default function ChatLayout() {
               {/* Button 3: Code */}
               <button
                 onClick={() => { setInputValue("Write a python script for"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-primary border border-border-subtle rounded-xl hover:bg-surface-2 hover:border-gray-400 transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
               >
                 <Code2Icon className="h-8 w-8" />
                 <span className="text-sm font-medium">Code</span>
@@ -488,7 +514,7 @@ export default function ChatLayout() {
               {/* Button 4: Learn */}
               <button
                 onClick={() => { setInputValue("Explain the concept of"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-primary border border-border-subtle rounded-xl hover:bg-surface-2 hover:border-gray-400 transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
               >
                 <BookOpenCheckIcon className="h-8 w-8" />
                 <span className="text-sm font-medium">Learn</span>
@@ -513,7 +539,8 @@ export default function ChatLayout() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto p-6 animate-fade-in"> {/* This is the new Message List container */}
+           // 6. Added ref to message list container
+          <div ref={messageListRef} className="flex-1 overflow-y-auto p-6 animate-fade-in">
             {streamMessages.map((message, index) => (
               <div
                 key={message.id || `message-${index}`}
@@ -526,11 +553,23 @@ export default function ChatLayout() {
           </div>
         )}
 
-        {/* Enhanced Input Area - Fixed at bottom */}
+        {/* 6. Scroll to bottom button */}
+        {showScrollToBottom && (
+          <Button
+            onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
+            className="absolute bottom-24 right-10 z-10 rounded-full bg-accent-primary text-white p-2 shadow-lg hover:bg-accent-hover"
+            title="Scroll to bottom"
+          >
+            <ArrowDownIcon className="h-5 w-5" />
+          </Button>
+        )}
+
+        {/* 5. Message Input Component - Enhanced Input Area - Fixed at bottom */}
         <div className="absolute bottom-6 left-6 right-6">
           <div className="max-w-4xl mx-auto">
-            <div className="chat-input-container">
-              {/* Text Input Area */}
+            {/* chat-input-container class from globals.css provides main border and shadow */}
+            <div className="chat-input-container relative flex items-end p-2 space-x-2">
+              {/* Text Input Area needs padding for internal elements */}
               <textarea
                 ref={textareaRef}
                 value={inputValue}
@@ -538,82 +577,74 @@ export default function ChatLayout() {
                 onKeyDown={handleKeyPress}
                 placeholder="Type your message..."
                 disabled={isStreaming}
-                className="chat-input-textarea"
+                // Adjusted padding: pl-36 (model selector + 2 action buttons)
+                // Increased min-height to accommodate buttons better if text is short.
+                className="chat-input-textarea pl-36 pr-4 py-3 min-h-[60px]"
                 rows={1}
               />
               
-              {/* Controls Bar */}
-              <div className="chat-controls-bar">
-                <div className="flex items-center space-x-3">
-                  {/* Model Selector */}
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="chat-model-selector"
-                    disabled={isStreaming}
-                  >
-                    {MODEL_OPTIONS.map((model) => (
-                      <option
-                        key={model.id}
-                        value={model.id}
-                        disabled={!model.isFreemium && profile?.account_type === "guest"}
-                      >
-                        {model.label}
-                        {!model.isFreemium && profile?.account_type === "guest" ? " (Pro)" : ""}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Attachment Button */}
-                  {/* New Search Icon Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-text-secondary hover:text-accent-primary"
-                    title="Search conversation (coming soon)"
-                  >
-                    <SearchIcon className="h-4 w-4" />
-                  </Button>
-                  {/* Updated Attach Icon Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-text-secondary hover:text-accent-primary"
-                    title="Attach file (.txt, .md)"
-                  >
-                    <PaperclipIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Right side controls */}
-                <div className="flex items-center space-x-3">
-                  {isStreaming ? (
-                    <Button
-                      onClick={stopStreaming}
-                      className="h-8 w-8 p-0 bg-error hover:bg-error/80 text-white border-0 flex items-center justify-center rounded-md"
-                      title="Stop generation"
+              {/* Container for elements inside the textarea area (bottom-left) */}
+              <div className="absolute bottom-3 left-3 flex items-center space-x-1">
+                {/* Model Selector - Moved inside */}
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="chat-model-selector !py-1 !text-xs !h-auto" // smaller padding, text, auto height
+                  disabled={isStreaming}
+                >
+                  {MODEL_OPTIONS.map((model) => (
+                    <option
+                      key={model.id}
+                      value={model.id}
+                      disabled={!model.isFreemium && profile?.account_type === "guest"}
                     >
-                      <StopCircleIcon className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={!inputValue.trim()}
-                      className={`h-8 w-8 p-0 border-0 flex items-center justify-center rounded-md ${
-                        inputValue.trim()
-                          ? "btn-primary"
-                          : "bg-surface-2 text-text-secondary cursor-not-allowed" // Updated disabled state class
-                      }`}
-                      title="Send message"
-                    >
-                      <ArrowUpIcon className="h-4 w-4" /> {/* Replaced SendIcon */}
-                    </Button>
-                  )}
-                </div>
+                      {model.label}
+                      {!model.isFreemium && profile?.account_type === "guest" ? " (Pro)" : ""}
+                    </option>
+                  ))}
+                </select>
+
+                {/* New Action Buttons - Inside */}
+                <Button variant="ghost" size="icon" className="h-7 w-7 p-1.5 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300" title="Priority (coming soon)">
+                  <ZapIcon className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 p-1.5 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300" title="Search (coming soon)">
+                  <SearchIcon className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 p-1.5 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300" title="Attach file">
+                  <PaperclipIcon className="h-4 w-4" />
+                </Button>
               </div>
 
-              {/* Error Display */}
-              {streamError && (
+              {/* Send/Stop Button - Positioned to the right of the textarea wrapper */}
+              {isStreaming ? (
+                <Button
+                  onClick={stopStreaming}
+                  // Square, solid-colored button
+                  className="h-10 w-10 p-0 bg-red-600 hover:bg-red-700 text-white border-0 flex items-center justify-center rounded-lg flex-shrink-0"
+                  title="Stop generation"
+                >
+                  <StopCircleIcon className="h-5 w-5" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim()}
+                  // Square, solid-colored button (primary accent)
+                  className={`h-10 w-10 p-0 border-0 flex items-center justify-center rounded-lg flex-shrink-0 ${
+                    inputValue.trim()
+                      ? "bg-accent-primary text-white hover:bg-accent-hover"
+                      : "bg-surface-2 text-text-secondary cursor-not-allowed"
+                  }`}
+                  title="Send message"
+                >
+                  <ArrowUpIcon className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+
+            {/* Error Display */}
+            {streamError && (
                 <div className="px-6 pb-4">
                   <div className="text-sm text-error bg-error/10 rounded-lg p-3 border border-error/20">
                     {streamError}

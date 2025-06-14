@@ -20,7 +20,6 @@ const config: Config = {
         text: {
           primary: "var(--text-primary)",
           secondary: "var(--text-secondary)",
-          tertiary: "var(--text-tertiary)",
         },
         accent: {
           primary: "var(--accent-primary)",
@@ -28,7 +27,6 @@ const config: Config = {
         },
         border: {
           subtle: "var(--border-subtle)",
-          primary: "var(--border-primary)",
         },
         // Status colors (theme-aware)
         success: "var(--success)",
