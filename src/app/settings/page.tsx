@@ -21,6 +21,15 @@ import {
   SparklesIcon,
   XCircleIcon,
   LinkIcon,
+  SunIcon,
+  RocketIcon,
+  HeadphonesIcon,
+  StarIcon,
+  BugIcon,
+  AlertCircleIcon,
+  UsersIcon,
+  ShieldIcon,
+  FileTextIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -93,10 +102,45 @@ const AVAILABLE_MODELS = [
   },
 ];
 
+const NEW_AVAILABLE_MODELS = [
+  {
+    id: "gemini-2.0-flash",
+    name: "Gemini 2.0 Flash",
+    description: "Google's flagship model, known for speed and accuracy (and also web search!).",
+    capabilities: ["Vision", "PDFs", "Search"],
+    initialToggleState: false, // New property
+    actionLink: "Search URL" // New property
+  },
+  {
+    id: "gemini-2.0-flash-lite",
+    name: "Gemini 2.0 Flash Lite",
+    description: "Similar to 2.0 Flash, but even faster.",
+    capabilities: ["Fast", "Vision", "PDFs"],
+    initialToggleState: false,
+    actionLink: "Search URL"
+  },
+  {
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    description: "Google's latest fast model, known for speed and accuracy (and also web search!).",
+    capabilities: ["Vision", "PDFs", "Search"],
+    initialToggleState: true, // This one is ON
+    actionLink: "Search URL"
+  },
+  {
+    id: "gemini-2.5-flash-thinking",
+    name: "Gemini 2.5 Flash (Thinking)",
+    description: "Google's latest fast model, but now it can think!",
+    capabilities: ["Vision", "PDFs", "Search", "Effort Control"],
+    initialToggleState: false,
+    actionLink: "Search URL"
+  }
+];
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("account");
   const [modelSettings, setModelSettings] = useState(
-    AVAILABLE_MODELS.map((m) => ({ id: m.id, enabled: m.enabled }))
+    NEW_AVAILABLE_MODELS.map(m => ({ id: m.id, enabled: m.initialToggleState }))
   );
   const [displayName, setDisplayName] = useState("");
   const [apiKeys, setApiKeys] = useState({
@@ -120,6 +164,33 @@ export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();
   const { theme } = useTheme();
+
+  const API_KEY_CONFIG = [
+    {
+      provider: "claude" as keyof typeof apiKeys,
+      name: "Anthropic API Key",
+      models: ["Claude 3.5 Sonnet", "Claude 3.7 Sonnet", "Claude 3.7 Sonnet (Reasoning)", "Claude 4 Opus", "Claude 4 Sonnet"],
+      inputPlaceholder: { saved: "••••••••••••••••", unsaved: "Enter your Anthropic API key" },
+      consoleLinkText: "Get your API key from Anthropic's Console",
+      consoleLink: "https://console.anthropic.com/settings/keys",
+    },
+    {
+      provider: "openai" as keyof typeof apiKeys,
+      name: "OpenAI API Key",
+      models: ["GPT-4.5", "g3", "g3 Pro"],
+      inputPlaceholder: "sk-...",
+      consoleLinkText: "Get your API key from OpenAI's Dashboard",
+      consoleLink: "https://platform.openai.com/api-keys",
+    },
+    {
+      provider: "gemini" as keyof typeof apiKeys,
+      name: "Google API Key",
+      models: ["Gemini 2.0 Flash", "Gemini 2.0 Flash Lite", "Gemini 2.5 Flash", "Gemini 2.5 Flash (Thinking)", "Gemini 2.5 Pro"],
+      inputPlaceholder: "Alza...",
+      consoleLinkText: "Get your API key from Google Cloud Console",
+      consoleLink: "https://aistudio.google.com/app/apikey",
+    },
+  ];
 
   useEffect(() => {
     if (profile?.email && !displayName) {
@@ -214,9 +285,15 @@ export default function SettingsPage() {
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold text-text-primary">Settings</h1>
+          <h1
+            className="text-3xl font-bold text-text-primary cursor-pointer"
+            onClick={() => router.back()}
+          >
+            Back to Chat
+          </h1>
         </div>
         <div className="flex items-center space-x-4">
+          <SunIcon className="h-6 w-6 text-text-primary" />
           <ThemeToggle />
           <Button
             variant="link"
@@ -239,35 +316,22 @@ export default function SettingsPage() {
             {/* User Profile Card */}
             <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
               <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-accent-primary bg-surface-2 mx-auto mb-4 flex items-center justify-center">
-                {profile?.email ? (
-                  <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      profile.display_name ||
-                        profile.email.split("@")[0]
-                    )}&background=${encodeURIComponent(
-                      theme === "dark" ? "#8a6d5f" : "#6b4f41"
-                    )}&color=fff&size=96&font-size=0.33&bold=true`}
-                    alt="Profile Avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <UserIcon className="h-12 w-12 text-text-secondary" />
-                )}
+                <img
+                  src={`https://ui-avatars.com/api/?name=C&background=ec4899&color=fff&size=96&font-size=0.33&bold=true`}
+                  alt="Profile Avatar"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h3 className="text-xl font-semibold text-text-primary truncate">
-                {profile?.display_name ||
-                  profile?.email?.split("@")[0] ||
-                  "User"}
+                Charles
               </h3>
               <p className="text-sm text-text-secondary truncate mb-3">
-                {profile?.email || "No email"}
+                charles@gmail.com
               </p>
               <span
-                className={`px-3 py-1 text-xs font-semibold rounded-full bg-accent-primary text-[var(--btn-primary-text)]`}
+                className={`px-3 py-1 text-xs font-semibold rounded-full bg-pink-500 text-white`}
               >
-                {profile?.account_type === "guest"
-                  ? "Free Plan"
-                  : "Pro Plan"}
+                Pro Plan
               </span>
             </div>
 
@@ -277,7 +341,7 @@ export default function SettingsPage() {
                 Message Usage
               </h3>
               <p className="text-sm text-text-secondary mb-6">
-                Resets on Jan 1, 2025
+                Resets on 07/11/2025
               </p>
               {/* Standard Usage */}
               <div className="mb-6">
@@ -286,36 +350,19 @@ export default function SettingsPage() {
                     Standard
                   </span>
                   <span className="text-sm text-text-primary">
-                    {`${
-                      profile?.account_type === "guest"
-                        ? 10 - (profile.credits_left ?? 10)
-                        : 1500 - (profile?.credits_left ?? 1500)
-                    } / ${
-                      profile?.account_type === "guest" ? 10 : 1500
-                    }`}
+                    185/1500
                   </span>
                 </div>
                 <div className="w-full bg-border-subtle rounded-full h-2.5">
                   <div
                     className="bg-accent-primary h-2.5 rounded-full"
                     style={{
-                      width: `${
-                        ((profile?.account_type === "guest"
-                          ? 10 - (profile.credits_left ?? 10)
-                          : 1500 - (profile?.credits_left ?? 1500)) /
-                          (profile?.account_type === "guest"
-                            ? 10
-                            : 1500)) *
-                        100
-                      }%`,
+                      width: `12.33%`,
                     }}
                   ></div>
                 </div>
                 <p className="text-xs text-text-secondary mt-1.5">
-                  {`${
-                    profile?.credits_left ??
-                    (profile?.account_type === "guest" ? 10 : 1500)
-                  } messages remaining`}
+                  1315 messages remaining
                 </p>
               </div>
               {/* Premium Usage */}
@@ -330,29 +377,19 @@ export default function SettingsPage() {
                     </span>
                   </div>
                   <span className="text-sm text-text-primary">
-                    {`${
-                      profile?.account_type === "pro"
-                        ? 0
-                        : 0
-                    } / ${
-                      profile?.account_type === "pro" ? 100 : 0
-                    }`}
+                    99/100
                   </span>
                 </div>
                 <div className="w-full bg-border-subtle rounded-full h-2.5">
                   <div
                     className="bg-accent-primary h-2.5 rounded-full"
                     style={{
-                      width: `${
-                        profile?.account_type === "pro" ? 0 : 0
-                      }%`,
+                      width: `99%`,
                     }}
                   ></div>
                 </div>
                 <p className="text-xs text-text-secondary mt-1.5">
-                  {`${
-                    profile?.account_type === "pro" ? 100 : 0
-                  } messages remaining`}
+                  1 messages remaining
                 </p>
               </div>
               <Button
@@ -365,6 +402,27 @@ export default function SettingsPage() {
                 <ArrowRightIcon className="h-4 w-4 ml-2" />
               </Button>
             </div>
+
+            {/* Keyboard Shortcuts Card */}
+            <div className="p-6 bg-surface-1 rounded-lg border border-subtle">
+              <h3 className="text-xl font-semibold text-text-primary mb-4">
+                Keyboard Shortcuts
+              </h3>
+              <ul className="space-y-3">
+                <li className="flex justify-between items-center">
+                  <span className="text-sm text-text-primary">Search</span>
+                  <kbd className="px-2 py-1.5 text-xs font-semibold text-text-primary bg-surface-2 border border-subtle rounded-md">Ctrl K</kbd>
+                </li>
+                <li className="flex justify-between items-center">
+                  <span className="text-sm text-text-primary">New Chat</span>
+                  <kbd className="px-2 py-1.5 text-xs font-semibold text-text-primary bg-surface-2 border border-subtle rounded-md">Ctrl Shift O</kbd>
+                </li>
+                <li className="flex justify-between items-center">
+                  <span className="text-sm text-text-primary">Toggle Sidebar</span>
+                  <kbd className="px-2 py-1.5 text-xs font-semibold text-text-primary bg-surface-2 border border-subtle rounded-md">Ctrl B</kbd>
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* Right Column */}
@@ -375,11 +433,11 @@ export default function SettingsPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2.5 text-sm font-medium rounded-t-md whitespace-nowrap transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-opacity-50
+                    className={`px-4 text-sm font-medium rounded-t-md whitespace-nowrap transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-opacity-50
                       ${
                         activeTab === tab.id
-                          ? "bg-accent-primary text-[var(--btn-primary-text)]"
-                          : "text-text-secondary hover:bg-surface-1 hover:text-text-primary"
+                          ? "bg-accent-primary text-[var(--btn-primary-text)] border-b-2 border-accent-primary pb-2"
+                          : "text-text-secondary hover:bg-surface-1 hover:text-text-primary pb-[calc(0.625rem-2px)] pt-2.5"
                       }
                     `}
                   >
@@ -396,42 +454,38 @@ export default function SettingsPage() {
               {activeTab === "account" && (
                 <div className="space-y-8 animate-fade-in">
                   <h2 className="text-2xl font-semibold text-text-primary">
-                    {profile?.account_type === "pro"
-                      ? "Pro Plan Benefits"
-                      : "Account Settings"}
+                    Pro Plan Benefits
                   </h2>
-                  {profile?.account_type === "pro" && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-                        <span className="text-4xl mb-3 block">🚀</span>
-                        <h4 className="text-lg font-semibold text-text-primary mb-1">
-                          Access to All Models
-                        </h4>
-                        <p className="text-sm text-text-secondary">
-                          Utilize our most powerful AI models without
-                          restrictions.
-                        </p>
-                      </div>
-                      <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-                        <span className="text-4xl mb-3 block">💰</span>
-                        <h4 className="text-lg font-semibold text-text-primary mb-1">
-                          Generous Limits
-                        </h4>
-                        <p className="text-sm text-text-secondary">
-                          Enjoy higher message quotas and usage allowances.
-                        </p>
-                      </div>
-                      <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-                        <span className="text-4xl mb-3 block">🎧</span>
-                        <h4 className="text-lg font-semibold text-text-primary mb-1">
-                          Priority Support
-                        </h4>
-                        <p className="text-sm text-text-secondary">
-                          Get faster assistance from our dedicated support team.
-                        </p>
-                      </div>
+                  {/* Assuming Pro Plan for display purposes as per previous modifications */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
+                      <RocketIcon className="h-10 w-10 mx-auto mb-3 text-pink-500" />
+                      <h4 className="text-lg font-semibold text-text-primary mb-1">
+                        Access to All Models
+                      </h4>
+                      <p className="text-sm text-text-secondary">
+                        Get access to our full suite of models including Claude, o3-mini-high, and more!
+                      </p>
                     </div>
-                  )}
+                    <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
+                      <SparklesIcon className="h-10 w-10 mx-auto mb-3 text-pink-500" />
+                      <h4 className="text-lg font-semibold text-text-primary mb-1">
+                        Generous Limits
+                      </h4>
+                      <p className="text-sm text-text-secondary">
+                        Receive 1500 standard credits per month, plus 100 premium credits* per month.
+                      </p>
+                    </div>
+                    <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
+                      <HeadphonesIcon className="h-10 w-10 mx-auto mb-3 text-pink-500" />
+                      <h4 className="text-lg font-semibold text-text-primary mb-1">
+                        Priority Support
+                      </h4>
+                      <p className="text-sm text-text-secondary">
+                        Get faster responses and dedicated assistance from the R3 team whenever you need help!
+                      </p>
+                    </div>
+                  </div>
                   <div className="p-6 bg-surface-1 rounded-lg border border-subtle">
                     <h3 className="text-xl font-semibold text-text-primary mb-4">
                       Subscription
@@ -439,23 +493,23 @@ export default function SettingsPage() {
                     <p className="text-text-secondary mb-4">
                       You are currently on the{" "}
                       <span className="font-semibold">
-                        {profile?.account_type === "guest"
-                          ? "Free Plan"
-                          : "Pro Plan"}
+                        Pro Plan
                       </span>
                       .
-                      {profile?.account_type === "guest" &&
-                        " Consider upgrading for more features."}
+                      {/* Removed " Consider upgrading for more features." */}
                     </p>
                     <Button
                       onClick={() =>
                         window.open("https://example.com/billing", "_blank")
                       }
-                      className="btn-primary"
+                      className="px-4 py-2 text-sm font-medium rounded-md bg-purple-600 hover:bg-purple-700 text-white inline-flex items-center justify-center"
                     >
                       Manage Subscription
                       <ExternalLinkIcon className="h-4 w-4 ml-2" />
                     </Button>
+                    <p className="text-xs text-text-secondary mt-2">
+                      *Premium credits are used for GPT Image Gen, Claude Sonnet, and Grok 3. Additional Premium credits can be purchased separately.
+                    </p>
                   </div>
                   <div className="p-6 bg-surface-1 rounded-lg border border-subtle">
                     <h3 className="text-xl font-semibold text-danger-warning mb-2">
@@ -466,12 +520,12 @@ export default function SettingsPage() {
                       This action cannot be undone.
                     </p>
                     <Button
-                      variant="destructive"
                       onClick={() =>
                         alert(
                           "Account deletion initiated (placeholder). This is irreversible."
                         )
                       }
+                      className="px-4 py-2 text-sm font-medium rounded-md bg-red-600 hover:bg-red-700 text-white inline-flex items-center justify-center"
                     >
                       Delete Account
                     </Button>
@@ -512,48 +566,44 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                   <div className="space-y-4">
-                    {AVAILABLE_MODELS.map((model) => {
+                    {NEW_AVAILABLE_MODELS.map((model) => {
                       const modelState = modelSettings.find(
                         (m) => m.id === model.id
                       );
                       const isEnabled =
-                        modelState?.enabled ?? model.enabled;
+                        modelState?.enabled ?? model.initialToggleState;
                       return (
                         <div
                           key={model.id}
                           className={`p-5 bg-surface-1 rounded-lg border ${
                             isEnabled
-                              ? "border-accent-primary shadow-md"
+                              ? "border-pink-500 shadow-md"
                               : "border-subtle"
                           } transition-all`}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center mb-2">
-                                <span className="text-2xl mr-3 text-accent-primary">
-                                  {model.provider === "OpenAI"
-                                    ? "🤖"
-                                    : model.provider === "Anthropic"
-                                    ? "✨"
-                                    : "🧠"}
-                                </span>
-                                <h3 className="text-lg font-semibold text-text-primary">
-                                  {model.name}
-                                </h3>
-                              </div>
+                              <h3 className="text-lg font-semibold text-text-primary mb-1">{model.name}</h3>
                               <p className="text-sm text-text-secondary mb-3 leading-relaxed">
                                 {model.description}
                               </p>
                               <div className="flex flex-wrap gap-2 mb-3">
-                                {model.features.map((feature) => (
+                                {model.capabilities.map((capability) => (
                                   <span
-                                    key={feature}
+                                    key={capability}
                                     className="px-2.5 py-0.5 text-xs font-medium bg-surface-0 text-text-secondary rounded-full border border-subtle"
                                   >
-                                    {feature}
+                                    {capability}
                                   </span>
                                 ))}
                               </div>
+                              <a
+                                href="#" // Placeholder link
+                                className="text-sm text-accent-primary hover:underline inline-flex items-center"
+                              >
+                                <LinkIcon className="h-3.5 w-3.5 mr-1.5" />
+                                {model.actionLink}
+                              </a>
                             </div>
                             <div className="ml-4 flex flex-col items-end space-y-2">
                               <label
@@ -573,7 +623,7 @@ export default function SettingsPage() {
                                   <div
                                     className={`block w-10 h-6 rounded-full ${
                                       isEnabled
-                                        ? "bg-accent-primary"
+                                        ? "bg-pink-500"
                                         : "bg-border-subtle"
                                     }`}
                                   ></div>
@@ -604,30 +654,7 @@ export default function SettingsPage() {
                       limits. Your keys are encrypted and stored securely.
                     </p>
                   </div>
-                  {[
-                    {
-                      provider: "openai" as keyof typeof apiKeys,
-                      name: "OpenAI API Key",
-                      models: ["GPT-4o", "GPT-4o Mini"],
-                      consoleLink: "https://platform.openai.com/api-keys",
-                      placeholderPrefix: "sk-",
-                    },
-                    {
-                      provider: "claude" as keyof typeof apiKeys,
-                      name: "Anthropic API Key",
-                      models: ["Claude 3.5 Sonnet", "Claude 3.5 Haiku"],
-                      consoleLink:
-                        "https://console.anthropic.com/settings/keys",
-                      placeholderPrefix: "sk-ant-",
-                    },
-                    {
-                      provider: "gemini" as keyof typeof apiKeys,
-                      name: "Gemini API Key",
-                      models: ["Gemini 1.5 Pro", "Gemini 1.5 Flash"],
-                      consoleLink: "https://aistudio.google.com/app/apikey",
-                      placeholderPrefix: "AIza",
-                    },
-                  ].map((item) => (
+                  {API_KEY_CONFIG.map((item) => (
                     <div
                       key={item.provider}
                       className="p-6 bg-surface-1 rounded-lg border border-subtle"
@@ -656,9 +683,9 @@ export default function SettingsPage() {
                             }))
                           }
                           placeholder={
-                            savedApiKeys[item.provider]
-                              ? "••••••••••••••••"
-                              : `${item.placeholderPrefix}...`
+                            typeof item.inputPlaceholder === 'object'
+                              ? (savedApiKeys[item.provider] ? item.inputPlaceholder.saved : item.inputPlaceholder.unsaved)
+                              : item.inputPlaceholder
                           }
                           className="w-full p-3 border border-subtle rounded-md bg-surface-0 text-text-primary focus:ring-2 focus:ring-accent-primary focus:border-accent-primary pr-12"
                         />
@@ -681,16 +708,13 @@ export default function SettingsPage() {
                           rel="noopener noreferrer"
                           className="text-sm text-accent-primary hover:underline inline-flex items-center"
                         >
-                          Get your API key from{" "}
-                          {item.provider.charAt(0).toUpperCase() +
-                            item.provider.slice(1)}{" "}
-                          Console
+                          {item.consoleLinkText}
                           <ExternalLinkIcon className="h-3.5 w-3.5 ml-1.5" />
                         </a>
                         <Button
                           onClick={() => handleSaveApiKey(item.provider)}
                           disabled={isLoading || !apiKeys[item.provider]?.trim()}
-                          className="btn-primary"
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
                         >
                           {isLoading ? "Saving..." : "Save"}
                         </Button>
@@ -701,11 +725,65 @@ export default function SettingsPage() {
               )}
               {(activeTab === "customization" ||
                 activeTab === "history" ||
-                activeTab === "attachments" ||
-                activeTab === "contact") && (
+                activeTab === "attachments") && (
                 <p className="mt-4 text-text-secondary">
                   This section is under construction.
                 </p>
+              )}
+              {activeTab === "contact" && (
+                <div className="animate-fade-in">
+                  <h2 className="text-2xl font-semibold text-text-primary mb-6">We're here to help!</h2>
+                  <div className="space-y-4">
+                    {/* Item 1: Feature idea */}
+                    <div className="p-4 bg-surface-2 rounded-lg border border-subtle flex items-center space-x-4 cursor-pointer hover:bg-surface-3 transition-colors duration-150">
+                      <StarIcon className="h-6 w-6 text-pink-500 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-text-primary">Have a cool feature idea?</p>
+                        <p className="text-sm text-text-secondary">Vote on upcoming features or suggest your own</p>
+                      </div>
+                    </div>
+                    {/* Item 2: Non-critical bug */}
+                    <div className="p-4 bg-surface-2 rounded-lg border border-subtle flex items-center space-x-4 cursor-pointer hover:bg-surface-3 transition-colors duration-150">
+                      <BugIcon className="h-6 w-6 text-red-500 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-text-primary">Found a non-critical bug?</p>
+                        <p className="text-sm text-text-secondary">UI glitches or formatting issues? Report them here :)</p>
+                      </div>
+                    </div>
+                    {/* Item 3: Account/billing issues */}
+                    <div className="p-4 bg-surface-2 rounded-lg border border-subtle flex items-center space-x-4 cursor-pointer hover:bg-surface-3 transition-colors duration-150">
+                      <AlertCircleIcon className="h-6 w-6 text-yellow-500 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-text-primary">Having account or billing issues?</p>
+                        <p className="text-sm text-text-secondary">Email us for priority support - support@ping.gg</p>
+                      </div>
+                    </div>
+                    {/* Item 4: Join community */}
+                    <div className="p-4 bg-surface-2 rounded-lg border border-subtle flex items-center space-x-4 cursor-pointer hover:bg-surface-3 transition-colors duration-150">
+                      <UsersIcon className="h-6 w-6 text-blue-500 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-text-primary">Want to join the community?</p>
+                        <p className="text-sm text-text-secondary">Come hang out in our Discord! Chat with the team and other users</p>
+                      </div>
+                    </div>
+                    {/* Item 5: Privacy Policy */}
+                    <div className="p-4 bg-surface-2 rounded-lg border border-subtle flex items-center space-x-4 cursor-pointer hover:bg-surface-3 transition-colors duration-150">
+                      <ShieldIcon className="h-6 w-6 text-green-500 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-text-primary">Privacy Policy</p>
+                        <p className="text-sm text-text-secondary">Read our privacy policy and data handling practices</p>
+                      </div>
+                    </div>
+                    {/* Item 6: Terms of Service */}
+                    <div className="p-4 bg-surface-2 rounded-lg border border-subtle flex items-center space-x-4 cursor-pointer hover:bg-surface-3 transition-colors duration-150">
+                      <FileTextIcon className="h-6 w-6 text-gray-500 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-text-primary">Terms of Service</p>
+                        <p className="text-sm text-text-secondary">Review our terms of service and usage guidelines</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
