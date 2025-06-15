@@ -21,6 +21,10 @@ import {
   SparklesIcon,
   XCircleIcon,
   LinkIcon,
+  ShieldIcon,
+  BellIcon,
+  HelpCircleIcon,
+  SettingsIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -127,14 +131,14 @@ export default function SettingsPage() {
     }
   }, [profile, displayName]);
 
-  const tabsConfig: { id: Tab; label: string }[] = [
-    { id: "account", label: "Account" },
-    { id: "customization", label: "Customization" },
-    { id: "history", label: "History & Sync" },
-    { id: "models", label: "Models" },
-    { id: "apikeys", label: "API Keys" },
-    { id: "attachments", label: "Attachments" },
-    { id: "contact", label: "Contact Us" },
+  const tabsConfig: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: "account", label: "Account", icon: <UserIcon className="h-4 w-4" /> },
+    { id: "customization", label: "Customization", icon: <SettingsIcon className="h-4 w-4" /> },
+    { id: "history", label: "History & Sync", icon: <BarChart3Icon className="h-4 w-4" /> },
+    { id: "models", label: "Models", icon: <CpuIcon className="h-4 w-4" /> },
+    { id: "apikeys", label: "API Keys", icon: <KeyIcon className="h-4 w-4" /> },
+    { id: "attachments", label: "Attachments", icon: <LinkIcon className="h-4 w-4" /> },
+    { id: "contact", label: "Contact Us", icon: <HelpCircleIcon className="h-4 w-4" /> },
   ];
 
   const handleToggleModel = (modelId: string) => {
@@ -202,90 +206,108 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-surface-0">
-      {/* Header */}
-      <div className="settings-header flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-            className="h-10 w-10 p-0 btn-ghost icon-hover text-text-primary"
-            title="Back to Chat"
-          >
-            <ArrowLeftIcon className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold text-text-primary">Settings</h1>
-        </div>
-        <div className="flex items-center space-x-4">
-          <ThemeToggle />
-          <Button
-            variant="link"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              router.push("/login");
-            }}
-            className="text-text-primary hover:underline"
-            title="Sign out"
-          >
-            Sign out
-          </Button>
+      {/* Modern Header */}
+      <div className="sticky top-0 z-40 bg-surface-0/80 backdrop-blur-lg border-b border-subtle">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.back()}
+                className="h-10 w-10 p-0 rounded-full hover:bg-surface-1 transition-all duration-200"
+                title="Back to Chat"
+              >
+                <ArrowLeftIcon className="h-5 w-5 text-text-primary" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
+                <p className="text-sm text-text-secondary">Manage your account and preferences</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  router.push("/login");
+                }}
+                className="text-text-secondary hover:text-text-primary transition-colors"
+                title="Sign out"
+              >
+                Sign out
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="settings-container">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Column */}
-          <div className="lg:w-1/3 xl:w-1/4 space-y-6">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Left Sidebar - User Profile & Usage */}
+          <div className="lg:col-span-1 space-y-6">
             {/* User Profile Card */}
-            <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-accent-primary bg-surface-2 mx-auto mb-4 flex items-center justify-center">
-                {profile?.email ? (
-                  <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      profile.display_name ||
-                        profile.email.split("@")[0]
-                    )}&background=${encodeURIComponent(
-                      theme === "dark" ? "#8a6d5f" : "#6b4f41"
-                    )}&color=fff&size=96&font-size=0.33&bold=true`}
-                    alt="Profile Avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <UserIcon className="h-12 w-12 text-text-secondary" />
-                )}
+            <div className="bg-surface-1 rounded-2xl p-6 border border-subtle shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="text-center">
+                <div className="relative inline-block mb-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-3 border-accent-primary bg-surface-2 mx-auto flex items-center justify-center">
+                    {profile?.email ? (
+                      <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          profile.display_name ||
+                            profile.email.split("@")[0]
+                        )}&background=${encodeURIComponent(
+                          theme === "dark" ? "#8a6d5f" : "#6b4f41"
+                        )}&color=fff&size=80&font-size=0.33&bold=true`}
+                        alt="Profile Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <UserIcon className="h-10 w-10 text-text-secondary" />
+                    )}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-accent-primary rounded-full flex items-center justify-center">
+                    <CheckIcon className="h-3 w-3 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-text-primary mb-1">
+                  {profile?.display_name ||
+                    profile?.email?.split("@")[0] ||
+                    "User"}
+                </h3>
+                <p className="text-sm text-text-secondary mb-3 truncate">
+                  {profile?.email || "No email"}
+                </p>
+                <span
+                  className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
+                    profile?.account_type === "guest"
+                      ? "bg-surface-2 text-text-secondary"
+                      : "bg-accent-primary text-white"
+                  }`}
+                >
+                  {profile?.account_type === "guest" ? "Free Plan" : "Pro Plan"}
+                </span>
               </div>
-              <h3 className="text-xl font-semibold text-text-primary truncate">
-                {profile?.display_name ||
-                  profile?.email?.split("@")[0] ||
-                  "User"}
-              </h3>
-              <p className="text-sm text-text-secondary truncate mb-3">
-                {profile?.email || "No email"}
-              </p>
-              <span
-                className={`px-3 py-1 text-xs font-semibold rounded-full bg-accent-primary text-[var(--btn-primary-text)]`}
-              >
-                {profile?.account_type === "guest"
-                  ? "Free Plan"
-                  : "Pro Plan"}
-              </span>
             </div>
 
             {/* Message Usage Card */}
-            <div className="p-6 bg-surface-1 rounded-lg border border-subtle">
-              <h3 className="text-xl font-semibold text-text-primary mb-1">
-                Message Usage
-              </h3>
+            <div className="bg-surface-1 rounded-2xl p-6 border border-subtle shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-text-primary">Message Usage</h3>
+                <InfoIcon className="h-4 w-4 text-text-secondary" />
+              </div>
               <p className="text-sm text-text-secondary mb-6">
                 Resets on Jan 1, 2025
               </p>
+              
               {/* Standard Usage */}
               <div className="mb-6">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-text-primary">
                     Standard
                   </span>
-                  <span className="text-sm text-text-primary">
+                  <span className="text-sm text-text-primary font-mono">
                     {`${
                       profile?.account_type === "guest"
                         ? 10 - (profile.credits_left ?? 10)
@@ -295,9 +317,9 @@ export default function SettingsPage() {
                     }`}
                   </span>
                 </div>
-                <div className="w-full bg-border-subtle rounded-full h-2.5">
+                <div className="w-full bg-surface-2 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-accent-primary h-2.5 rounded-full"
+                    className="bg-accent-primary h-2 rounded-full transition-all duration-500 ease-out"
                     style={{
                       width: `${
                         ((profile?.account_type === "guest"
@@ -311,251 +333,283 @@ export default function SettingsPage() {
                     }}
                   ></div>
                 </div>
-                <p className="text-xs text-text-secondary mt-1.5">
+                <p className="text-xs text-text-secondary mt-2">
                   {`${
                     profile?.credits_left ??
                     (profile?.account_type === "guest" ? 10 : 1500)
                   } messages remaining`}
                 </p>
               </div>
+
               {/* Premium Usage */}
-              <div className="mb-8">
-                <div className="flex justify-between items-center mb-1">
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center">
-                    <span className="text-sm font-medium text-text-primary mr-1.5">
+                    <span className="text-sm font-medium text-text-primary mr-2">
                       Premium
                     </span>
-                    <span title="Premium models for Pro plan users">
-                      <InfoIcon className="h-3.5 w-3.5 text-text-secondary" />
-                    </span>
+                    <InfoIcon className="h-3 w-3 text-text-secondary" />
                   </div>
-                  <span className="text-sm text-text-primary">
+                  <span className="text-sm text-text-primary font-mono">
                     {`${
-                      profile?.account_type === "pro"
-                        ? 0
-                        : 0
-                    } / ${
-                      profile?.account_type === "pro" ? 100 : 0
-                    }`}
+                      profile?.account_type === "pro" ? 0 : 0
+                    } / ${profile?.account_type === "pro" ? 100 : 0}`}
                   </span>
                 </div>
-                <div className="w-full bg-border-subtle rounded-full h-2.5">
+                <div className="w-full bg-surface-2 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-accent-primary h-2.5 rounded-full"
+                    className="bg-accent-primary h-2 rounded-full transition-all duration-500 ease-out"
                     style={{
-                      width: `${
-                        profile?.account_type === "pro" ? 0 : 0
-                      }%`,
+                      width: `${profile?.account_type === "pro" ? 0 : 0}%`,
                     }}
                   ></div>
                 </div>
-                <p className="text-xs text-text-secondary mt-1.5">
+                <p className="text-xs text-text-secondary mt-2">
                   {`${
                     profile?.account_type === "pro" ? 100 : 0
                   } messages remaining`}
                 </p>
               </div>
+
               <Button
                 onClick={() =>
                   window.open("https://example.com/billing", "_blank")
                 }
-                className="w-full btn-primary"
+                className="w-full bg-accent-primary hover:bg-accent-hover text-white rounded-xl py-3 font-medium transition-all duration-200 hover:shadow-lg"
               >
                 Buy more premium credits
                 <ArrowRightIcon className="h-4 w-4 ml-2" />
               </Button>
             </div>
+
+            {/* Keyboard Shortcuts Card */}
+            <div className="bg-surface-1 rounded-2xl p-6 border border-subtle shadow-sm hover:shadow-md transition-all duration-300">
+              <h3 className="text-lg font-semibold text-text-primary mb-4">Keyboard Shortcuts</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-text-secondary">Search</span>
+                  <div className="flex items-center space-x-1">
+                    <kbd className="px-2 py-1 text-xs bg-surface-2 rounded border border-subtle">Ctrl</kbd>
+                    <kbd className="px-2 py-1 text-xs bg-surface-2 rounded border border-subtle">K</kbd>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-text-secondary">New Chat</span>
+                  <div className="flex items-center space-x-1">
+                    <kbd className="px-2 py-1 text-xs bg-surface-2 rounded border border-subtle">Ctrl</kbd>
+                    <kbd className="px-2 py-1 text-xs bg-surface-2 rounded border border-subtle">Shift</kbd>
+                    <kbd className="px-2 py-1 text-xs bg-surface-2 rounded border border-subtle">O</kbd>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-text-secondary">Toggle Sidebar</span>
+                  <div className="flex items-center space-x-1">
+                    <kbd className="px-2 py-1 text-xs bg-surface-2 rounded border border-subtle">Ctrl</kbd>
+                    <kbd className="px-2 py-1 text-xs bg-surface-2 rounded border border-subtle">B</kbd>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column */}
-          <div className="flex-1">
-            <div className="mb-6 border-b border-subtle">
-              <nav className="flex space-x-1 overflow-x-auto pb-px">
-                {tabsConfig.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2.5 text-sm font-medium rounded-t-md whitespace-nowrap transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-opacity-50
-                      ${
+          {/* Right Content Area */}
+          <div className="lg:col-span-3">
+            {/* Tab Navigation */}
+            <div className="mb-8">
+              <div className="border-b border-subtle">
+                <nav className="flex space-x-1 overflow-x-auto pb-px">
+                  {tabsConfig.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium rounded-t-xl whitespace-nowrap transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-opacity-50 ${
                         activeTab === tab.id
-                          ? "bg-accent-primary text-[var(--btn-primary-text)]"
+                          ? "bg-accent-primary text-white shadow-lg border-b-2 border-accent-primary"
                           : "text-text-secondary hover:bg-surface-1 hover:text-text-primary"
-                      }
-                    `}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </nav>
+                      }`}
+                    >
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
             </div>
-            <div className="p-6 bg-surface-1 rounded-lg border border-subtle min-h-[400px]">
-              <h2 className="text-xl font-semibold text-text-primary mb-4">
-                {tabsConfig.find((t) => t.id === activeTab)?.label ||
-                  "Content Area"}
-              </h2>
+
+            {/* Tab Content */}
+            <div className="space-y-6">
               {activeTab === "account" && (
-                <div className="space-y-8 animate-fade-in">
-                  <h2 className="text-2xl font-semibold text-text-primary">
-                    {profile?.account_type === "pro"
-                      ? "Pro Plan Benefits"
-                      : "Account Settings"}
-                  </h2>
+                <div className="space-y-6 animate-fade-in">
+                  {/* Pro Plan Benefits */}
                   {profile?.account_type === "pro" && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-                        <span className="text-4xl mb-3 block">🚀</span>
-                        <h4 className="text-lg font-semibold text-text-primary mb-1">
-                          Access to All Models
-                        </h4>
-                        <p className="text-sm text-text-secondary">
-                          Utilize our most powerful AI models without
-                          restrictions.
-                        </p>
-                      </div>
-                      <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-                        <span className="text-4xl mb-3 block">💰</span>
-                        <h4 className="text-lg font-semibold text-text-primary mb-1">
-                          Generous Limits
-                        </h4>
-                        <p className="text-sm text-text-secondary">
-                          Enjoy higher message quotas and usage allowances.
-                        </p>
-                      </div>
-                      <div className="p-6 bg-surface-1 rounded-lg border border-subtle text-center">
-                        <span className="text-4xl mb-3 block">🎧</span>
-                        <h4 className="text-lg font-semibold text-text-primary mb-1">
-                          Priority Support
-                        </h4>
-                        <p className="text-sm text-text-secondary">
-                          Get faster assistance from our dedicated support team.
-                        </p>
+                    <div className="bg-surface-1 rounded-2xl p-8 border border-subtle shadow-sm hover:shadow-md transition-all duration-300">
+                      <h2 className="text-2xl font-bold text-text-primary mb-6">Pro Plan Benefits</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="text-center p-6 bg-surface-2 rounded-xl border border-subtle hover:border-accent-primary transition-all duration-200">
+                          <div className="w-12 h-12 bg-accent-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-2xl">🚀</span>
+                          </div>
+                          <h4 className="text-lg font-semibold text-text-primary mb-2">
+                            Access to All Models
+                          </h4>
+                          <p className="text-sm text-text-secondary">
+                            Utilize our most powerful AI models without restrictions.
+                          </p>
+                        </div>
+                        <div className="text-center p-6 bg-surface-2 rounded-xl border border-subtle hover:border-accent-primary transition-all duration-200">
+                          <div className="w-12 h-12 bg-accent-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-2xl">💰</span>
+                          </div>
+                          <h4 className="text-lg font-semibold text-text-primary mb-2">
+                            Generous Limits
+                          </h4>
+                          <p className="text-sm text-text-secondary">
+                            Enjoy higher message quotas and usage allowances.
+                          </p>
+                        </div>
+                        <div className="text-center p-6 bg-surface-2 rounded-xl border border-subtle hover:border-accent-primary transition-all duration-200">
+                          <div className="w-12 h-12 bg-accent-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-2xl">🎧</span>
+                          </div>
+                          <h4 className="text-lg font-semibold text-text-primary mb-2">
+                            Priority Support
+                          </h4>
+                          <p className="text-sm text-text-secondary">
+                            Get faster assistance from our dedicated support team.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
-                  <div className="p-6 bg-surface-1 rounded-lg border border-subtle">
+
+                  {/* Subscription Management */}
+                  <div className="bg-surface-1 rounded-2xl p-8 border border-subtle shadow-sm hover:shadow-md transition-all duration-300">
                     <h3 className="text-xl font-semibold text-text-primary mb-4">
-                      Subscription
+                      Subscription Management
                     </h3>
-                    <p className="text-text-secondary mb-4">
+                    <p className="text-text-secondary mb-6">
                       You are currently on the{" "}
-                      <span className="font-semibold">
-                        {profile?.account_type === "guest"
-                          ? "Free Plan"
-                          : "Pro Plan"}
+                      <span className="font-semibold text-accent-primary">
+                        {profile?.account_type === "guest" ? "Free Plan" : "Pro Plan"}
                       </span>
-                      .
+                      .{" "}
                       {profile?.account_type === "guest" &&
-                        " Consider upgrading for more features."}
+                        "Consider upgrading for more features and higher limits."}
                     </p>
                     <Button
                       onClick={() =>
                         window.open("https://example.com/billing", "_blank")
                       }
-                      className="btn-primary"
+                      className="bg-accent-primary hover:bg-accent-hover text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:shadow-lg"
                     >
+                      <CreditCardIcon className="h-4 w-4 mr-2" />
                       Manage Subscription
                       <ExternalLinkIcon className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
-                  <div className="p-6 bg-surface-1 rounded-lg border border-subtle">
-                    <h3 className="text-xl font-semibold text-danger-warning mb-2">
-                      Danger Zone
-                    </h3>
-                    <p className="text-text-secondary mb-4">
-                      Permanently delete your account and all associated data.
-                      This action cannot be undone.
+
+                  {/* Danger Zone */}
+                  <div className="bg-surface-1 rounded-2xl p-8 border border-error shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center mb-4">
+                      <ShieldIcon className="h-6 w-6 text-error mr-3" />
+                      <h3 className="text-xl font-semibold text-error">Danger Zone</h3>
+                    </div>
+                    <p className="text-text-secondary mb-6">
+                      Permanently delete your account and all associated data. This action cannot be undone.
                     </p>
                     <Button
                       variant="destructive"
                       onClick={() =>
-                        alert(
-                          "Account deletion initiated (placeholder). This is irreversible."
-                        )
+                        alert("Account deletion initiated (placeholder). This is irreversible.")
                       }
+                      className="bg-error hover:bg-error/90 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200"
                     >
                       Delete Account
                     </Button>
                   </div>
                 </div>
               )}
+
               {activeTab === "models" && (
                 <div className="space-y-6 animate-fade-in">
-                  <div>
-                    <h2 className="text-2xl font-semibold text-text-primary mb-1">
+                  {/* Header Card */}
+                  <div className="bg-surface-1 rounded-2xl p-8 border border-subtle shadow-sm">
+                    <h2 className="text-2xl font-bold text-text-primary mb-2">
                       Available Models
                     </h2>
-                    <p className="text-text-secondary">
-                      Choose which models appear in your model selector. This
-                      won't affect existing conversations.
+                    <p className="text-text-secondary mb-6">
+                      Choose which models appear in your model selector. This won't affect existing conversations.
                     </p>
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        variant="outline"
+                        className="text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary border-subtle rounded-xl"
+                      >
+                        <ListFilterIcon className="h-4 w-4 mr-2" /> Filter by features
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary border-subtle rounded-xl"
+                      >
+                        <SparklesIcon className="h-4 w-4 mr-2" /> Select Recommended
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary border-subtle rounded-xl"
+                      >
+                        <XCircleIcon className="h-4 w-4 mr-2" /> Unselect All
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-3">
-                    <Button
-                      variant="outline"
-                      className="text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary"
-                    >
-                      <ListFilterIcon className="h-4 w-4 mr-2" /> Filter by
-                      features
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary"
-                    >
-                      <SparklesIcon className="h-4 w-4 mr-2" /> Select
-                      Recommended Models
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary"
-                    >
-                      <XCircleIcon className="h-4 w-4 mr-2" /> Unselect All
-                    </Button>
-                  </div>
-                  <div className="space-y-4">
+
+                  {/* Models Grid */}
+                  <div className="grid gap-6">
                     {AVAILABLE_MODELS.map((model) => {
-                      const modelState = modelSettings.find(
-                        (m) => m.id === model.id
-                      );
-                      const isEnabled =
-                        modelState?.enabled ?? model.enabled;
+                      const modelState = modelSettings.find((m) => m.id === model.id);
+                      const isEnabled = modelState?.enabled ?? model.enabled;
                       return (
                         <div
                           key={model.id}
-                          className={`p-5 bg-surface-1 rounded-lg border ${
+                          className={`bg-surface-1 rounded-2xl p-6 border transition-all duration-300 hover:shadow-lg ${
                             isEnabled
-                              ? "border-accent-primary shadow-md"
-                              : "border-subtle"
-                          } transition-all`}
+                              ? "border-accent-primary shadow-md bg-gradient-to-r from-surface-1 to-accent-primary/5"
+                              : "border-subtle shadow-sm hover:border-accent-primary/50"
+                          }`}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center mb-2">
-                                <span className="text-2xl mr-3 text-accent-primary">
-                                  {model.provider === "OpenAI"
-                                    ? "🤖"
-                                    : model.provider === "Anthropic"
-                                    ? "✨"
-                                    : "🧠"}
-                                </span>
-                                <h3 className="text-lg font-semibold text-text-primary">
-                                  {model.name}
-                                </h3>
+                              <div className="flex items-center mb-3">
+                                <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center mr-4">
+                                  <span className="text-xl">
+                                    {model.provider === "OpenAI"
+                                      ? "🤖"
+                                      : model.provider === "Anthropic"
+                                      ? "✨"
+                                      : "🧠"}
+                                  </span>
+                                </div>
+                                <div>
+                                  <h3 className="text-lg font-semibold text-text-primary">
+                                    {model.name}
+                                  </h3>
+                                  <p className="text-sm text-text-secondary">{model.provider}</p>
+                                </div>
                               </div>
-                              <p className="text-sm text-text-secondary mb-3 leading-relaxed">
+                              <p className="text-sm text-text-secondary mb-4 leading-relaxed">
                                 {model.description}
                               </p>
-                              <div className="flex flex-wrap gap-2 mb-3">
+                              <div className="flex flex-wrap gap-2">
                                 {model.features.map((feature) => (
                                   <span
                                     key={feature}
-                                    className="px-2.5 py-0.5 text-xs font-medium bg-surface-0 text-text-secondary rounded-full border border-subtle"
+                                    className="px-3 py-1 text-xs font-medium bg-surface-2 text-text-secondary rounded-full border border-subtle"
                                   >
                                     {feature}
                                   </span>
                                 ))}
                               </div>
                             </div>
-                            <div className="ml-4 flex flex-col items-end space-y-2">
+                            <div className="ml-6 flex flex-col items-end space-y-3">
                               <label
                                 htmlFor={`toggle-${model.id}`}
                                 className="flex items-center cursor-pointer"
@@ -566,24 +620,28 @@ export default function SettingsPage() {
                                     id={`toggle-${model.id}`}
                                     className="sr-only"
                                     checked={isEnabled}
-                                    onChange={() =>
-                                      handleToggleModel(model.id)
-                                    }
+                                    onChange={() => handleToggleModel(model.id)}
                                   />
                                   <div
-                                    className={`block w-10 h-6 rounded-full ${
-                                      isEnabled
-                                        ? "bg-accent-primary"
-                                        : "bg-border-subtle"
+                                    className={`block w-12 h-6 rounded-full transition-all duration-200 ${
+                                      isEnabled ? "bg-accent-primary" : "bg-surface-2"
                                     }`}
                                   ></div>
                                   <div
-                                    className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
-                                      isEnabled ? "translate-x-4" : ""
+                                    className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 ${
+                                      isEnabled ? "translate-x-6" : ""
                                     }`}
                                   ></div>
                                 </div>
                               </label>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-accent-primary hover:bg-accent-primary/10 rounded-lg"
+                              >
+                                <LinkIcon className="h-4 w-4 mr-1" />
+                                Search URL
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -592,18 +650,18 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+
               {activeTab === "apikeys" && (
                 <div className="space-y-6 animate-fade-in">
-                  <div>
-                    <h2 className="text-2xl font-semibold text-text-primary mb-1">
-                      API Keys
-                    </h2>
+                  {/* Header Card */}
+                  <div className="bg-surface-1 rounded-2xl p-8 border border-subtle shadow-sm">
+                    <h2 className="text-2xl font-bold text-text-primary mb-2">API Keys</h2>
                     <p className="text-text-secondary">
-                      Bring your own API keys for selected models. Messages sent
-                      using your API keys will not count towards your monthly
-                      limits. Your keys are encrypted and stored securely.
+                      Bring your own API keys for selected models. Messages sent using your API keys will not count towards your monthly limits. Your keys are encrypted and stored securely.
                     </p>
                   </div>
+
+                  {/* API Keys */}
                   {[
                     {
                       provider: "openai" as keyof typeof apiKeys,
@@ -611,41 +669,49 @@ export default function SettingsPage() {
                       models: ["GPT-4o", "GPT-4o Mini"],
                       consoleLink: "https://platform.openai.com/api-keys",
                       placeholderPrefix: "sk-",
+                      color: "bg-green-500",
                     },
                     {
                       provider: "claude" as keyof typeof apiKeys,
                       name: "Anthropic API Key",
                       models: ["Claude 3.5 Sonnet", "Claude 3.5 Haiku"],
-                      consoleLink:
-                        "https://console.anthropic.com/settings/keys",
+                      consoleLink: "https://console.anthropic.com/settings/keys",
                       placeholderPrefix: "sk-ant-",
+                      color: "bg-orange-500",
                     },
                     {
                       provider: "gemini" as keyof typeof apiKeys,
-                      name: "Gemini API Key",
+                      name: "Google API Key",
                       models: ["Gemini 1.5 Pro", "Gemini 1.5 Flash"],
                       consoleLink: "https://aistudio.google.com/app/apikey",
                       placeholderPrefix: "AIza",
+                      color: "bg-blue-500",
                     },
                   ].map((item) => (
                     <div
                       key={item.provider}
-                      className="p-6 bg-surface-1 rounded-lg border border-subtle"
+                      className="bg-surface-1 rounded-2xl p-8 border border-subtle shadow-sm hover:shadow-md transition-all duration-300"
                     >
-                      <h3 className="text-xl font-semibold text-text-primary mb-2">
-                        {item.name}
-                      </h3>
-                      <div className="flex flex-wrap gap-2 mb-3">
+                      <div className="flex items-center mb-4">
+                        <div className={`w-10 h-10 ${item.color} rounded-xl flex items-center justify-center mr-4`}>
+                          <KeyIcon className="h-5 w-5 text-white" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-text-primary">{item.name}</h3>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        <span className="text-sm text-text-secondary mr-2">Used for:</span>
                         {item.models.map((modelName) => (
                           <span
                             key={modelName}
-                            className="px-2 py-0.5 text-xs bg-surface-0 text-text-secondary rounded-full border border-subtle"
+                            className="px-3 py-1 text-xs bg-surface-2 text-text-secondary rounded-full border border-subtle"
                           >
                             {modelName}
                           </span>
                         ))}
                       </div>
-                      <div className="relative mb-2">
+                      
+                      <div className="relative mb-4">
                         <input
                           type={showApiKeys[item.provider] ? "text" : "password"}
                           value={apiKeys[item.provider]}
@@ -660,12 +726,12 @@ export default function SettingsPage() {
                               ? "••••••••••••••••"
                               : `${item.placeholderPrefix}...`
                           }
-                          className="w-full p-3 border border-subtle rounded-md bg-surface-0 text-text-primary focus:ring-2 focus:ring-accent-primary focus:border-accent-primary pr-12"
+                          className="w-full p-4 border border-subtle rounded-xl bg-surface-2 text-text-primary focus:ring-2 focus:ring-accent-primary focus:border-accent-primary pr-12 transition-all duration-200"
                         />
                         <button
                           type="button"
                           onClick={() => toggleApiKeyVisibility(item.provider)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-text-secondary hover:text-text-primary"
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 text-text-secondary hover:text-text-primary transition-colors"
                         >
                           {showApiKeys[item.provider] ? (
                             <EyeOffIcon className="h-5 w-5" />
@@ -674,23 +740,22 @@ export default function SettingsPage() {
                           )}
                         </button>
                       </div>
-                      <div className="flex items-center justify-between mt-4">
+                      
+                      <div className="flex items-center justify-between">
                         <a
                           href={item.consoleLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-accent-primary hover:underline inline-flex items-center"
+                          className="text-sm text-accent-primary hover:underline inline-flex items-center transition-colors"
                         >
                           Get your API key from{" "}
-                          {item.provider.charAt(0).toUpperCase() +
-                            item.provider.slice(1)}{" "}
-                          Console
+                          {item.provider.charAt(0).toUpperCase() + item.provider.slice(1)} Console
                           <ExternalLinkIcon className="h-3.5 w-3.5 ml-1.5" />
                         </a>
                         <Button
                           onClick={() => handleSaveApiKey(item.provider)}
                           disabled={isLoading || !apiKeys[item.provider]?.trim()}
-                          className="btn-primary"
+                          className="bg-accent-primary hover:bg-accent-hover text-white px-6 py-2 rounded-xl font-medium transition-all duration-200 disabled:opacity-50"
                         >
                           {isLoading ? "Saving..." : "Save"}
                         </Button>
@@ -699,13 +764,20 @@ export default function SettingsPage() {
                   ))}
                 </div>
               )}
+
               {(activeTab === "customization" ||
                 activeTab === "history" ||
                 activeTab === "attachments" ||
                 activeTab === "contact") && (
-                <p className="mt-4 text-text-secondary">
-                  This section is under construction.
-                </p>
+                <div className="bg-surface-1 rounded-2xl p-12 border border-subtle shadow-sm text-center">
+                  <div className="w-16 h-16 bg-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <SettingsIcon className="h-8 w-8 text-text-secondary" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">Coming Soon</h3>
+                  <p className="text-text-secondary">
+                    This section is under construction. We're working hard to bring you new features!
+                  </p>
+                </div>
               )}
             </div>
           </div>
