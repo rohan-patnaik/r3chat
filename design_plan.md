@@ -14,8 +14,6 @@ This request covers front-end UI and UX changes only for the Settings page. All 
 
 **4. Core Theme & Styling (Reference from Main PRD)**
 
-*(Re-iterating the theme colors for clarity and completeness in this document for the LLM.)*
-
 *   **Dark Theme (Default):**
     *   **Background:** A very dark, desaturated brown. Hex: `#1c1a19`
     *   **Component Background (e.g., Panels, Cards):** A slightly lighter dark brown. Hex: `#2a2726`

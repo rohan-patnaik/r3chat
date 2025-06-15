@@ -1,0 +1,271 @@
+Here is the complete, detailed description of "TalkBot" in Markdown format, ready for copy-pasting:
+
+```markdown
+# Project Handoff & Replication Guide: TalkBot
+
+## 1. Product Vision & High-Level Overview
+
+**TalkBot** is a sophisticated, high-performance AI chat web application. Its primary goal is to provide a premium, seamless, and aesthetically pleasing user experience for interacting with various Large Language Models (LLMs). The application is architected for performance, featuring a responsive, dual-theme UI, real-time message streaming, and robust user and conversation management. It is designed with the needs of technical users, such as developers and data scientists, in mind, but is intuitive enough for any user.
+
+## 2. Core Features
+
+*   **Dual-Theme UI:** A meticulously crafted brown-based theme with full support for both **light and dark modes**. The user's preference is persisted in `localStorage`.
+*   **Secure Authentication:** User sign-in is handled exclusively through **Google OAuth** via Supabase Auth. All application routes are protected by middleware.
+*   **Full Conversation Management (CRUD):**
+    *   **List & Group:** A resizable and collapsible sidebar lists all user conversations, automatically grouped by date ("Today," "Yesterday," "Last 7 Days," etc.).
+    *   **Deferred Creation:** New chats are created in the UI instantly, with the database record only being created upon the first message send, ensuring a snappy user experience.
+    *   **Rename & Delete:** Conversations can be renamed inline or deleted with optimistic UI updates for a responsive feel.
+*   **Interactive Chat Experience:**
+    *   **Real-time Streaming:** AI responses are streamed token-by-token.
+    *   **Model Selection:** A dropdown allows users to switch between different LLMs (e.g., Gemini, GPT, Claude).
+    *   **Welcome Screen:** A helpful empty state guides new users with a personalized greeting, action buttons, and suggested prompts.
+*   **Comprehensive Settings Page:** A two-column layout allows users to manage:
+    *   **Profile:** Edit display name.
+    *   **Usage:** View message credit usage via progress bars.
+    *   **Models:** Toggle the visibility of different LLMs in the chat UI.
+    *   **API Keys:** Securely provide their own API keys for OpenAI, Anthropic, and Gemini to bypass the app's credit system.
+
+## 3. Technical Architecture & Stack
+
+The application is a modern full-stack TypeScript project built on the Next.js App Router.
+
+| Category | Technology | Role & Configuration |
+| :--- | :--- | :--- |
+| **Framework** | Next.js 15.3.3 | App Router for routing and layouts. `Turbopack` is used for development. |
+| **Language** | TypeScript | Provides static typing for the entire codebase. |
+| **Backend & DB** | Supabase | **Auth:** Google OAuth provider. <br> **Database:** PostgreSQL for storing all data. <br> **Realtime:** Used for live updates to the user profile. <br> **Storage:** (Implicit) For user avatar uploads. |
+| **Styling** | Tailwind CSS v4 | Utility-first CSS framework. Configured with a custom brown-based theme via CSS variables in `globals.css`. |
+| **UI Components** | shadcn/ui | A collection of beautifully designed, accessible, and unstyled components (e.g., `Button`). |
+| **Icons** | `lucide-react` | Provides a comprehensive set of clean and consistent icons. |
+| **Deployment** | Vercel | The intended deployment platform, optimized for Next.js applications. |
+
+## 4. Detailed Project Structure
+
+The codebase is organized logically within the `src` directory, following modern Next.js conventions.
+
+```
+/
+├── public/                 # Static assets (SVGs, icons)
+├── src/
+│   ├── app/                # Next.js App Router: All pages and API routes
+│   │   ├── api/            # Backend API endpoints
+│   │   │   ├── conversations/ # CRUD for conversations
+│   │   │   │   ├── [id]/messages/ # GET messages for a specific conversation
+│   │   │   │   └── route.ts       # GET, PATCH, DELETE conversations
+│   │   │   ├── messages/
+│   │   │   │   └── stream/        # POST: The core message streaming endpoint
+│   │   │   └── debug/           # Utility endpoints for testing
+│   │   ├── auth/
+│   │   │   └── callback/      # Handles the Google OAuth callback
+│   │   ├── login/             # The login page component
+│   │   ├── settings/          # The settings page and its layout
+│   │   ├── globals.css        # Global styles and CSS variable theme definitions
+│   │   ├── layout.tsx         # Root layout of the application
+│   │   └── page.tsx           # Home page, entry point for the chat interface
+│   │
+│   ├── components/           # Reusable React components
+│   │   ├── ui/               # Components from shadcn/ui (e.g., button.tsx)
+│   │   ├── ChatLayout.tsx    # The main component orchestrating the entire chat UI
+│   │   └── ThemeToggle.tsx   # The light/dark mode toggle button
+│   │
+│   ├── lib/                  # Core logic, helpers, and configurations
+│   │   ├── hooks/            # Custom React hooks for state management
+│   │   │   ├── useChatStream.ts    # Manages message streaming and state
+│   │   │   ├── useConversations.ts # Manages conversation CRUD operations
+│   │   │   ├── useTheme.tsx        # Manages theme state and persistence
+│   │   │   └── useUserProfile.ts   # Fetches and subscribes to user profile data
+│   │   ├── llm/
+│   │   │   └── providers.ts    # Abstraction layer for different LLM providers (OpenAI, Anthropic, Gemini)
+│   │   ├── supabase/
+│   │   │   ├── client.ts       # Browser-side Supabase client instance
+│   │   │   ├── server.ts       # Server-side Supabase client instance
+│   │   │   └── queries.ts      # Reusable database query functions
+│   │   ├── utils/
+│   │   │   └── date.ts         # Date formatting and grouping utilities
+│   │   ├── database.types.ts   # TypeScript types generated from the Supabase schema
+│   │   └── utils.ts            # General utility functions (e.g., `cn` for classnames)
+│   │
+│   └── middleware.ts         # Protects routes by checking for an authenticated user
+│
+├── next.config.ts          # Next.js configuration file
+├── tailwind.config.ts      # Tailwind CSS configuration file
+└── package.json            # Project dependencies and scripts
+```
+
+## 5. Key Logic & Data Flows
+
+### Authentication Flow
+1.  A user visits a protected page.
+2.  `middleware.ts` intercepts the request, creates a server-side Supabase client, and checks for an active session.
+3.  If no session exists, the user is redirected to `/login`.
+4.  On the `/login` page, the user clicks "Login with Google". This calls Supabase's `signInWithOAuth`.
+5.  After successful Google authentication, the user is redirected to `/auth/callback/route.ts`.
+6.  This route exchanges the auth code for a session, which is stored in cookies. The user is then redirected to the homepage (`/`).
+
+### Sending a Message (Streaming Flow)
+1.  The user types a message in `ChatLayout.tsx` and clicks send.
+2.  The `handleSendMessage` function calls the `sendMessage` method from the `useChatStream` hook.
+3.  The hook optimistically adds the user's message and a placeholder assistant message to its local state.
+4.  A `POST` request is made to `/api/messages/stream/route.ts` with the prompt, model, and `conversationId`.
+5.  The API route:
+    a. Validates the user session.
+    b. Decrements the user's `credits_left` in the `profiles` table.
+    c. Creates a new conversation if `conversationId` is null.
+    d. Uses `lib/llm/providers.ts` to get the correct LLM provider.
+    e. Calls the provider's `streamResponse` method.
+    f. Pipes the resulting `ReadableStream` back to the client.
+6.  Back in `useChatStream`, the `fetch` response is read chunk-by-chunk. The text is decoded and appended to the assistant's message in the local state, causing the UI to update in real-time.
+
+## 6. Database Schema
+
+The application relies on four primary tables in Supabase.
+
+#### `profiles`
+Stores public user data linked to the authentication user.
+
+| Column | Type | Notes |
+| :--- | :--- | :--- |
+| `id` | `uuid` | Primary Key, Foreign Key to `auth.users.id` |
+| `display_name` | `text` | User's chosen display name |
+| `email` | `text` | User's email address |
+| `account_type` | `text` | e.g., "Free Plan", "Pro Plan" |
+| `credits_left` | `integer` | Number of messages the user can send |
+
+#### `conversations`
+Stores metadata for each chat session.
+
+| Column | Type | Notes |
+| :--- | :--- | :--- |
+| `id` | `uuid` | Primary Key, `uuid_generate_v4()` default |
+| `user_id` | `uuid` | Foreign Key to `auth.users.id` |
+| `title` | `text` | Title of the conversation (can be auto-generated) |
+| `created_at` | `timestampz` | `now()` default |
+| `updated_at` | `timestampz` | `now()` default |
+
+#### `messages`
+Stores every message sent by the user or the assistant.
+
+| Column | Type | Notes |
+| :--- | :--- | :--- |
+| `id` | `bigint` | Primary Key, Identity |
+| `conversation_id` | `uuid` | Foreign Key to `conversations.id` |
+| `role` | `role_enum` | Enum: `'user'` or `'assistant'` |
+| `content` | `text` | The actual message content |
+| `created_at` | `timestampz` | `now()` default |
+
+#### `provider_keys`
+Stores user-provided API keys for different LLM services.
+
+| Column | Type | Notes |
+| :--- | :--- | :--- |
+| `user_id` | `uuid` | Composite Primary Key with `provider` |
+| `provider` | `text` | Composite Primary Key (e.g., 'openai', 'anthropic') |
+| `api_key` | `text` | The encrypted API key |
+| `created_at` | `timestampz` | `now()` default |
+
+## 7. Replication Steps
+
+To clone and run this project locally, follow these steps:
+
+1.  **Clone the repository.**
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Set up Supabase:**
+    *   Create a new project on [supabase.com](https://supabase.com).
+    *   Use the SQL editor to run the schema definitions for the tables listed above. (You can typically copy this directly from Supabase's auto-generated `database.types.ts` file, or define it manually based on the schema tables above. Remember to enable `uuid-ossp` extension for `uuid_generate_v4()`.)
+    *   Enable the Google Auth provider in the Supabase dashboard (`Authentication > Providers`).
+4.  **Create an environment file:**
+    *   Create a file named `.env.local` in the root of the project.
+    *   Add your Supabase project URL and Anon Key to this file:
+        ```env
+        NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+        NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+        ```
+5.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
+6.  Open [http://localhost:3000](http://localhost:3000) in your browser. You should be redirected to the `/login` page.
+
+## 8. LLM Provider Configuration & API Keys
+
+TalkBot supports integration with multiple Large Language Model providers. To enable these, you'll need to obtain API keys from the respective providers and configure them securely using environment variables.
+
+### Supported Providers & Models
+
+The `src/lib/llm/providers.ts` file abstracts the interactions with different LLM APIs. The `AVAILABLE_MODELS` array in `src/components/ChatLayout.tsx` defines which models are surfaced to the user.
+
+*   **OpenAI:** Supports GPT-4o, GPT-4o Mini.
+*   **Anthropic:** Supports Claude 3.5 Sonnet, Claude 3.5 Haiku.
+*   **Google Gemini:** Supports Gemini 1.5 Flash, Gemini 1.5 Pro.
+
+### Environment Variable Setup
+
+For the application to communicate with these LLMs, their API keys **must** be set as environment variables.
+
+Create or update your `.env.local` file (for local development) and your deployment environment variables (e.g., Vercel Project Settings) with the following:
+
+```env
+# OpenAI
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Anthropic
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# Google Gemini
+GEMINI_API_KEY=your_google_gemini_api_key_here
+```
+
+**Note:** The application also allows users to input their *own* API keys via the Settings page (`src/app/settings/page.tsx`). These user-provided keys are stored securely in your Supabase database's `provider_keys` table. The backend API (`src/app/api/messages/stream/route.ts`) prioritizes user-provided keys over environment variables if available.
+
+## 9. Theming System: CSS Variables & Tailwind CSS
+
+TalkBot implements a robust dual-theme (light/dark brown) system using CSS variables (`:root` and `.dark` selectors) and integrates seamlessly with Tailwind CSS v4.
+
+*   **Global Styles (`src/app/globals.css`):**
+    *   This file defines the core CSS variables for colors, spacing, and typography under the `:root` selector for the default light theme.
+    *   A `.dark` class then overrides these variables for the dark theme.
+    *   Utility classes (e.g., `.surface-0`, `.text-primary`) are defined here to directly map to these CSS variables, providing a semantic way to apply colors that automatically adapt to the active theme.
+    *   Custom scrollbar styling, general button styles, input field styles, and specific chat component styles (`.chat-input-container`, `.message-user`, etc.) are also defined here.
+*   **Tailwind Configuration (`tailwind.config.ts`):**
+    *   The `theme.extend.colors` section in `tailwind.config.ts` references these CSS variables (e.g., `accent: { primary: "var(--accent-primary)", ... }`). This allows you to use `bg-accent-primary`, `text-primary`, `border-subtle`, etc., directly in your React components and have them pull values from the active CSS theme.
+    *   This setup ensures that all UI elements consistently adhere to the chosen theme without manual switching in component code.
+
+**Replication Note:** To introduce new colors or adjust existing ones, modify the CSS variables in `src/app/globals.css`. If you define new custom Tailwind classes that leverage these variables, ensure `tailwind.config.ts` properly extends the theme.
+
+## 10. Key Third-Party Libraries & Usage
+
+Beyond the main stack, a few specific libraries are crucial:
+
+*   **`@radix-ui/react-slot`**: Used for building flexible UI components that can render as different HTML elements while maintaining their styles and behavior. (See `src/components/ui/button.tsx`).
+*   **`class-variance-authority` (cva)**: Enables creating flexible, reusable component variants (e.g., different button sizes, styles) with clear separation of concerns. This is fundamental to shadcn/ui and how components like `Button` (`src/components/ui/button.tsx`) are structured.
+*   **`clsx` & `tailwind-merge`**: Used together via the `cn` utility function (`src/lib/utils.ts`).
+    *   `clsx`: Conditionally combines class names.
+    *   `tailwind-merge`: Resolves conflicting Tailwind CSS classes, ensuring that utility classes are applied correctly when multiple are present (e.g., `p-4` applied after `p-2` will correctly override to `p-4`). This is critical for robust and predictable styling.
+
+## 11. Error Handling & Logging
+
+*   **Frontend Error Display:** In `ChatLayout.tsx`, the `useChatStream` hook provides an `error` state that is displayed as a subtle red banner at the bottom of the chat interface, informing the user of API or streaming issues.
+*   **Console Logging:** Basic error logging is performed to the browser console (for frontend errors) and server console (for API route errors). For production deployments, structured logging solutions would be recommended.
+*   **Supabase Client Errors:** Supabase client operations (`.select()`, `.insert()`, etc.) return an `error` object, which is consistently checked throughout the application (e.g., in `src/lib/supabase/queries.ts`, API routes, and hooks).
+
+## 12. Development & Code Quality Practices
+
+*   **ESLint:** The project includes an `eslint.config.mjs` configuration for linting, ensuring code quality, consistency, and catching potential issues early. It extends `next/core-web-vitals` and `next/typescript` rules.
+*   **TypeScript:** Strict TypeScript settings are enforced via `tsconfig.json` to minimize runtime errors and improve developer experience.
+*   **Prettier (Implicit):** Although not explicitly listed with a config, the consistent code formatting throughout the codebase implies the use of Prettier or similar formatter (often integrated with ESLint). For replication, ensuring Prettier is set up (e.g., via a `.prettierrc` file if not using a shared config) is recommended.
+
+## 13. Deployment (Vercel)
+
+The project is pre-configured for deployment on Vercel, the creators of Next.js.
+
+1.  **Link Repository:** Connect your Git repository (GitHub, GitLab, Bitbucket) to a new Vercel project.
+2.  **Environment Variables:** Crucially, add all necessary environment variables (especially `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`) to your Vercel project settings. Vercel automatically distinguishes between `NEXT_PUBLIC_` variables (exposed to browser) and server-only variables.
+3.  **Build & Deploy:** Vercel will automatically detect that it's a Next.js project and configure the build command (`npm run build`) and start command (`npm run start`). New commits to the connected branch will trigger automatic deployments.
+```
+
+
+## 13. Images attached for references
+**Images and structure:** The attached images of all the pages of the application will give you a reference of how the app should look like. 

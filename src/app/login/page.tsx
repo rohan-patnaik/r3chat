@@ -31,10 +31,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen surface-0 flex items-center justify-center p-4">
+    <div className="min-h-screen surface-0 flex items-center justify-center p-1">
       <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Welcome to R3.chat</h1>
+        <div className="text-center mb-2">
+          <h1 className="text-3xl font-bold text-primary mb-2">Welcome to R3Chat</h1>
           <p className="text-secondary">Sign in to continue your conversations</p>
         </div>
 
@@ -42,14 +42,15 @@ export default function LoginPage() {
           <Button
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full bg-accent hover:bg-accent-hover text-white"
+            className="w-full bg-accent bg-orange-700 hover:bg-accent-hover text-white"
             size="lg"
           >
             {isLoading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Signing in...
-              </>
+              // Option 1: Stack spinner and text vertically with a gap
+              <div className="flex flex-col items-center justify-center py-1">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mb-1" />
+                <span>Signing in...</span>
+              </div>
             ) : (
               <>
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -75,12 +76,13 @@ export default function LoginPage() {
             )}
           </Button>
 
-          <div className="mt-4 text-center">
+
+        </div>
+        <div className="mt-8 text-center">
             <p className="text-xs text-secondary">
               By continuing, you agree to our Terms of Service and Privacy Policy.
             </p>
           </div>
-        </div>
       </div>
     </div>
   );
