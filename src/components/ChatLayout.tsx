@@ -49,10 +49,10 @@ interface ModelOption {
 
 const MODEL_OPTIONS: ModelOption[] = [
   { id: "gpt-4o", label: "GPT-4o", provider: "OpenAI" },
-  { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "OpenAI", isFreemium: true },
+  { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "OpenAI"},
   { id: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet", provider: "Anthropic" },
-  { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku", provider: "Anthropic", isFreemium: true },
-  { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash-Lite", provider: "Google" },
+  { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku", provider: "Anthropic", },
+  { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash-Lite", provider: "Google", isFreemium: true  },
   { id: "gemini-2.5-flash-preview-05-20", label: "Gemini 2.5 Flash", provider: "Google", isFreemium: true },
 ];
 
@@ -64,7 +64,7 @@ function hasCreatedAt(
 
 export default function ChatLayout() {
   const [chatState, setChatState] = useState<ChatState>({ type: "home" });
-  const [selectedModel, setSelectedModel] = useState<string>("gpt-4o-mini");
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-preview-05-20");
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [editingConversation, setEditingConversation] = useState<string | null>(null);
@@ -498,17 +498,17 @@ export default function ChatLayout() {
             {/* Suggested Prompts */}
             <div className="space-y-3 max-w-md w-full">
               <h3 className="text-lg font-medium text-text-secondary mb-3">Or try these:</h3>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How does AI work?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
-                How does AI work?
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How fast is light?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+                How fast is light?
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Are black holes real?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
-                Are black holes real?
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Are wormholes real?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+                Are wormholes real?
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How many Rs are in the word \"strawberry\"?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
-                How many Rs are in the word "strawberry"?
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How many Rs are in the word \"Mississippi\"?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+                How many Ss are in the word "Mississippi"?
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("What is the meaning of life?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
-                What is the meaning of life?
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Is work-life balance a myth?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+                Is work-life balance a myth?
               </a>
             </div>
           </div>
