@@ -417,15 +417,15 @@ export default function SettingsPage() {
             {/* Tab Navigation */}
             <div className="mb-8">
               <div className="border-b border-subtle">
-                <nav className="flex space-x-1 overflow-x-auto pb-px">
+                <nav className="flex justify-between space-x-1 pb-px">
                   {tabsConfig.map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium rounded-t-xl whitespace-nowrap transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-opacity-50 ${
+                      className={`flex items-center space-x-2 px-3 py-0 h-[32px] text-sm font-medium rounded-full whitespace-nowrap transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-opacity-50 ${
                         activeTab === tab.id
-                          ? "bg-accent-primary text-white shadow-lg border-b-2 border-accent-primary"
-                          : "text-text-secondary hover:bg-surface-1 hover:text-text-primary"
+                          ? "bg-[#8a6d5f] text-[var(--text-primary)]"
+                          : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.05)] hover:text-[var(--text-primary)]"
                       }`}
                     >
                       {tab.icon}
@@ -624,7 +624,7 @@ export default function SettingsPage() {
                                   />
                                   <div
                                     className={`block w-12 h-6 rounded-full transition-all duration-200 ${
-                                      isEnabled ? "bg-accent-primary" : "bg-surface-2"
+                                      isEnabled ? "bg-[#743A36]" : "bg-[var(--surface-2)]"
                                     }`}
                                   ></div>
                                   <div

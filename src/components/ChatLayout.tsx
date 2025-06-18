@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   PlusIcon,
   MessageSquareIcon,
@@ -21,6 +22,8 @@ import {
   Code2Icon,    // For Code button
   BookOpenCheckIcon, // For Learn button
   ArrowUpIcon, // For Send button
+  SettingsIcon, // For Settings button
+  SparklesIcon, // For Quality indicator
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useConversations } from "@/lib/hooks/useConversations";
@@ -282,21 +285,33 @@ export default function ChatLayout() {
                   >
                     <PanelLeftClose className="h-4 w-4 text-text-primary" />
                   </Button>
-                  <h1 className="text-xl font-bold text-primary">R3Chat</h1>
+                  <h1 className="text-[16px] font-bold text-[var(--text-primary)]">R3.chat</h1>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="h-8 w-8 p-0 btn-ghost"
-                  title="Sign out"
-                >
-                  <LogOutIcon className="h-5 w-5 text-text-primary" />
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push('/settings')}
+                    className="h-8 w-8 p-0 btn-ghost hover:shadow-sm hover:bg-[rgba(255,255,255,0.1)]"
+                    aria-label="Settings"
+                  >
+                    <SettingsIcon className="h-5 w-5 text-[var(--text-primary)]" />
+                  </Button>
+                  <ThemeToggle />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="h-8 w-8 p-0 btn-ghost hover:shadow-sm hover:bg-[rgba(255,255,255,0.1)]"
+                    title="Sign out"
+                  >
+                    <LogOutIcon className="h-5 w-5 text-[var(--text-primary)]" />
+                  </Button>
+                </div>
               </div>
               <Button
                 onClick={handleNewChat}
-                className="w-full btn-primary mb-4"
+                className="w-full text-[var(--text-primary)] bg-transparent border border-[var(--border-subtle)] hover:bg-[var(--accent-primary)] hover:text-white rounded-none h-[32px] mb-4"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 New Chat
@@ -309,9 +324,19 @@ export default function ChatLayout() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search your threads..."
-                    className="input-field pl-10"
+                    className="w-full bg-[rgba(0,0,0,0.2)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] border border-[var(--border-subtle)] rounded-md py-2 pl-10 pr-3"
                   />
-                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-secondary" />
+                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--text-secondary)]" />
+                </div>
+              </div>
+              
+              {/* Pinned Section */}
+              <div className="mb-4">
+                <h3 className="text-[10px] uppercase text-[var(--text-secondary)] font-medium tracking-[0.05em] mt-4 mb-2">Pinned</h3>
+                <div className="space-y-1">
+                  {/* We'll populate this with pinned conversations in the future */}
+                  {/* This is a placeholder for the UI structure */}
+                  <div className="text-[var(--text-secondary)] text-xs italic px-2">No pinned conversations yet</div>
                 </div>
               </div>
             </div>
@@ -322,15 +347,17 @@ export default function ChatLayout() {
                 <div key={dateGroup}>
                   {convos.length > 0 && (
                     <>
-                      <h3 className="section-header">
+                      <h3 className="text-[10px] font-medium uppercase tracking-[0.05em] text-[var(--text-secondary)] text-left mt-8 mb-2">
                         {dateGroup.charAt(0).toUpperCase() + dateGroup.slice(1)}
                       </h3>
                       <div className="space-y-1 mb-4">
                         {convos.map((conversation) => (
                           <div
                             key={conversation.id}
-                            className={`conversation-item group ${
-                              chatState.conversationId === conversation.id ? "active" : ""
+                            className={`h-[32px] px-3 flex items-center group cursor-pointer ${
+                              chatState.conversationId === conversation.id 
+                                ? "bg-[##743A36] text-white" 
+                                : "hover:bg-[rgba(192,25,118,0.15)]"
                             }`}
                             onClick={() => handleConversationClick(conversation)}
                           >
@@ -352,10 +379,10 @@ export default function ChatLayout() {
                               />
                             ) : (
                               <div className="flex items-center justify-between">
-                                {/* Placeholder for future icon */}
-                                {/* <MessageSquareIcon className="mr-2 h-4 w-4 text-text-secondary flex-shrink-0" /> */}
+                                <MessageSquareIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                                 <span className="text-sm font-medium truncate flex-1">
-                                  {conversation.title || "New Chat"}
+                                  {(conversation.title || "New Chat").split(' ').slice(0, 4).join(' ')}
+                                  {(conversation.title || "New Chat").split(' ').length > 4 ? '...' : ''}
                                 </span>
                                 <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                                   <Button
@@ -413,13 +440,16 @@ export default function ChatLayout() {
                     {userName}
                   </p>
                   <div className="flex items-center space-x-2 mt-1">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                      profile?.account_type === "guest" 
-                        ? "bg-[var(--surface-2)] text-[var(--text-secondary)]" 
-                        : "bg-[var(--accent-primary)] text-[var(--btn-primary-text)]"
-                    }`}>
+                    <button 
+                      onClick={() => router.push('/settings')}
+                      className={`px-2 py-0.5 text-xs font-medium rounded-full cursor-pointer hover:shadow-md transition-shadow ${
+                        profile?.account_type === "guest" 
+                          ? "bg-[var(--surface-2)] text-[var(--text-secondary)]" 
+                          : "bg-[var(--accent-primary)] text-[var(--btn-primary-text)]"
+                      }`}
+                    >
                       {profile?.account_type === "guest" ? "Free" : "Pro"}
-                    </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -455,7 +485,7 @@ export default function ChatLayout() {
           // New Empty State Structure
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
             {/* Personalized Greeting */}
-            <h2 className="text-3xl font-semibold text-[var(--text-primary)] mb-8">
+            <h2 className="text-[28px] font-[600] text-[var(--text-primary)] mb-4 text-left w-full max-w-2xl">
               How can I help you, {userName}?
             </h2>
 
@@ -464,7 +494,7 @@ export default function ChatLayout() {
               {/* Button 1: Create */}
               <button
                 onClick={() => { setInputValue("Suggest fun activities"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--btn-primary-text)] rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
+                className="flex flex-col items-center justify-center p-4 bg-transparent text-[var(--text-primary)] border border-[#3A3633] hover:bg-[#2A2726] hover:border-[##743A36] hover:text-white rounded-lg transition-colors duration-150 space-y-2 h-[96px] w-[128px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
               >
                 <ZapIcon className="h-8 w-8" />
                 <span className="text-sm font-medium">Create</span>
@@ -472,7 +502,7 @@ export default function ChatLayout() {
               {/* Button 2: Explore */}
               <button
                 onClick={() => { setInputValue("Tell me about historical events"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--btn-primary-text)] rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
+                className="flex flex-col items-center justify-center p-4 bg-transparent text-[var(--text-primary)] border border-[#3A3633] hover:bg-[#2A2726] hover:border-[##743A36] hover:text-white rounded-lg transition-colors duration-150 space-y-2 h-[96px] w-[128px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
               >
                 <GlobeIcon className="h-8 w-8" />
                 <span className="text-sm font-medium">Explore</span>
@@ -480,7 +510,7 @@ export default function ChatLayout() {
               {/* Button 3: Code */}
               <button
                 onClick={() => { setInputValue("Write a python script for"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--btn-primary-text)] rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
+                className="flex flex-col items-center justify-center p-4 bg-transparent text-[var(--text-primary)] border border-[#3A3633] hover:bg-[#2A2726] hover:border-[##743A36] hover:text-white rounded-lg transition-colors duration-150 space-y-2 h-[96px] w-[128px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
               >
                 <Code2Icon className="h-8 w-8" />
                 <span className="text-sm font-medium">Code</span>
@@ -488,7 +518,7 @@ export default function ChatLayout() {
               {/* Button 4: Learn */}
               <button
                 onClick={() => { setInputValue("Explain the concept of"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--btn-primary-text)] rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
+                className="flex flex-col items-center justify-center p-4 bg-transparent text-[var(--text-primary)] border border-[#3A3633] hover:bg-[#2A2726] hover:border-[##743A36] hover:text-white rounded-lg transition-colors duration-150 space-y-2 h-[96px] w-[128px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
               >
                 <BookOpenCheckIcon className="h-8 w-8" />
                 <span className="text-sm font-medium">Learn</span>
@@ -496,18 +526,18 @@ export default function ChatLayout() {
             </div>
 
             {/* Suggested Prompts */}
-            <div className="space-y-3 max-w-md w-full">
+            <div className="space-y-3 max-w-md w-full text-left">
               <h3 className="text-lg font-medium text-[var(--text-secondary)] mb-3">Or try these:</h3>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How fast is light?"); textareaRef.current?.focus(); }} className="block text-[var(--accent-primary)] hover:underline">
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How fast is light?"); textareaRef.current?.focus(); }} className="block text-[var(--text-secondary)] hover:text-[##743A36] line-height-[1.5]">
                 How fast is light?
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Are wormholes real?"); textareaRef.current?.focus(); }} className="block text-[var(--accent-primary)] hover:underline">
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Are wormholes real?"); textareaRef.current?.focus(); }} className="block text-[var(--text-secondary)] hover:text-[##743A36] line-height-[1.5]">
                 Are wormholes real?
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How many Rs are in the word \"Mississippi\"?"); textareaRef.current?.focus(); }} className="block text-[var(--accent-primary)] hover:underline">
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How many Rs are in the word \"Mississippi\"?"); textareaRef.current?.focus(); }} className="block text-[var(--text-secondary)] hover:text-[##743A36] line-height-[1.5]">
                 How many Ss are in the word "Mississippi"?
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Is work-life balance a myth?"); textareaRef.current?.focus(); }} className="block text-[var(--accent-primary)] hover:underline">
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Is work-life balance a myth?"); textareaRef.current?.focus(); }} className="block text-[var(--text-secondary)] hover:text-[##743A36] line-height-[1.5]">
                 Is work-life balance a myth?
               </a>
             </div>
@@ -527,9 +557,13 @@ export default function ChatLayout() {
         )}
 
         {/* Enhanced Input Area - Fixed at bottom */}
-        <div className="absolute bottom-6 left-6 right-6">
+        <div className="fixed bottom-6 left-6 right-6">
           <div className="max-w-4xl mx-auto">
-            <div className="chat-input-container">
+            <div className="relative">
+              {/* Outer translucent rectangle */}
+              <div className="absolute inset-0 bg-[rgba(42,39,38,0.6)] rounded-xl blur-[2px] -m-1"></div>
+              {/* Inner translucent rectangle */}
+              <div className="chat-input-container bg-[rgba(42,39,38,0.8)] backdrop-blur-sm h-[96px] rounded-xl p-3 relative">
               {/* Text Input Area */}
               <textarea
                 ref={textareaRef}
@@ -538,18 +572,21 @@ export default function ChatLayout() {
                 onKeyDown={handleKeyPress}
                 placeholder="Type your message..."
                 disabled={isStreaming}
-                className="chat-input-textarea"
+                className="w-full bg-transparent border-none outline-none resize-none text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] p-3 max-h-[60px] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--border-subtle)] scrollbar-track-transparent"
                 rows={1}
+                style={{
+                  scrollbarWidth: inputValue.split('\n').length > 1 ? 'thin' : 'none',
+                }}
               />
               
               {/* Controls Bar */}
-              <div className="chat-controls-bar">
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between space-x-3">
                 <div className="flex items-center space-x-3">
                   {/* Model Selector */}
                   <select
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
-                    className="chat-model-selector"
+                    className="font-bold text-[var(--text-primary)] bg-transparent border-none outline-none cursor-pointer"
                     disabled={isStreaming}
                   >
                     {MODEL_OPTIONS.map((model) => (
@@ -564,21 +601,21 @@ export default function ChatLayout() {
                     ))}
                   </select>
 
-                  {/* Attachment Button */}
-                  {/* New Search Icon Button */}
+                  {/* Quality Indicator Button */}
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-text-secondary hover:text-accent-primary"
-                    title="Search conversation (coming soon)"
+                    className="h-8 w-8 p-0 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:shadow-sm hover:bg-[rgba(255,255,255,0.1)]"
+                    title="Quality settings"
                   >
-                    <SearchIcon className="h-4 w-4" />
+                    <SparklesIcon className="h-4 w-4" />
                   </Button>
-                  {/* Updated Attach Icon Button */}
+
+                  {/* Attachment Button */}
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-text-secondary hover:text-accent-primary"
+                    className="h-8 w-8 p-0 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:shadow-sm hover:bg-[rgba(255,255,255,0.1)]"
                     title="Attach file (.txt, .md)"
                   >
                     <PaperclipIcon className="h-4 w-4" />
@@ -601,12 +638,12 @@ export default function ChatLayout() {
                       disabled={!inputValue.trim()}
                       className={`h-8 w-8 p-0 border-0 flex items-center justify-center rounded-md ${
                         inputValue.trim()
-                          ? "btn-primary"
-                          : "bg-surface-2 text-text-secondary cursor-not-allowed" // Updated disabled state class
+                          ? "bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                          : "bg-transparent text-[var(--text-secondary)] opacity-50 cursor-not-allowed"
                       }`}
                       title="Send message"
                     >
-                      <ArrowUpIcon className="h-4 w-4" /> {/* Replaced SendIcon */}
+                      <ArrowUpIcon className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
@@ -614,12 +651,13 @@ export default function ChatLayout() {
 
               {/* Error Display */}
               {streamError && (
-                <div className="px-6 pb-4">
+                <div className="px-3 pb-2">
                   <div className="text-sm text-error bg-error/10 rounded-lg p-3 border border-error/20">
                     {streamError}
                   </div>
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>
