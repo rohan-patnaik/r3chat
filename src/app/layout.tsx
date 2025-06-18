@@ -27,10 +27,10 @@ export default function RootLayout({
               <ThemeToggle />
               <a
                 href="/settings"
-                className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-accent-primary/10 transition"
+                className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-[var(--accent-primary)]/10 transition"
                 title="Settings"
               >
-                <SettingsIcon className="h-5 w-5 text-text-primary" />
+                <SettingsIcon className="h-5 w-5 text-[var(--text-primary)]" />
               </a>
             </div>
             {children}

@@ -12,13 +12,13 @@ export function ThemeToggle() {
       variant="ghost"
       size="sm"
       onClick={toggleTheme}
-      className="h-8 w-8 p-0 btn-ghost"
+      className="h-8 w-8 p-0 rounded-full"
       title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
     >
       {theme === "light" ? (
-        <MoonIcon className="h-4 w-4 text-text-primary" />
+        <MoonIcon className="h-4 w-4 text-[var(--text-primary)]" />
       ) : (
-        <SunIcon className="h-4 w-4 text-text-primary" />
+        <SunIcon className="h-4 w-4 text-[var(--text-primary)]" />
       )}
     </Button>
   );

@@ -415,8 +415,8 @@ export default function ChatLayout() {
                   <div className="flex items-center space-x-2 mt-1">
                     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                       profile?.account_type === "guest" 
-                        ? "bg-surface-2 text-secondary" 
-                        : "bg-accent-primary text-[var(--btn-primary-text)]"
+                        ? "bg-[var(--surface-2)] text-[var(--text-secondary)]" 
+                        : "bg-[var(--accent-primary)] text-[var(--btn-primary-text)]"
                     }`}>
                       {profile?.account_type === "guest" ? "Free" : "Pro"}
                     </span>
@@ -431,7 +431,7 @@ export default function ChatLayout() {
         {!sidebarCollapsed && (
           <div
             ref={resizerRef}
-            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent-primary/20 transition-colors"
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-[var(--accent-primary)]/20 transition-colors"
           />
         )}
       </div>
@@ -442,9 +442,9 @@ export default function ChatLayout() {
           variant="ghost"
           size="sm"
           onClick={() => setSidebarCollapsed(false)}
-          className="fixed top-6 left-6 z-50 h-10 w-10 p-0 btn-ghost bg-surface-1/80 backdrop-blur-sm border border-subtle/50"
+          className="fixed top-6 left-6 z-50 h-10 w-10 p-0 bg-[var(--surface-1)]/80 backdrop-blur-sm border border-[var(--border-subtle)]/50"
         >
-          <PanelRightOpen className="h-5 w-5 text-text-primary" />
+          <PanelRightOpen className="h-5 w-5 text-[var(--text-primary)]" />
         </Button>
       )}
 
@@ -455,7 +455,7 @@ export default function ChatLayout() {
           // New Empty State Structure
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
             {/* Personalized Greeting */}
-            <h2 className="text-3xl font-semibold text-text-primary mb-8">
+            <h2 className="text-3xl font-semibold text-[var(--text-primary)] mb-8">
               How can I help you, {userName}?
             </h2>
 
@@ -464,7 +464,7 @@ export default function ChatLayout() {
               {/* Button 1: Create */}
               <button
                 onClick={() => { setInputValue("Suggest fun activities"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+                className="flex flex-col items-center justify-center p-4 bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--btn-primary-text)] rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
               >
                 <ZapIcon className="h-8 w-8" />
                 <span className="text-sm font-medium">Create</span>
@@ -472,7 +472,7 @@ export default function ChatLayout() {
               {/* Button 2: Explore */}
               <button
                 onClick={() => { setInputValue("Tell me about historical events"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+                className="flex flex-col items-center justify-center p-4 bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--btn-primary-text)] rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
               >
                 <GlobeIcon className="h-8 w-8" />
                 <span className="text-sm font-medium">Explore</span>
@@ -480,7 +480,7 @@ export default function ChatLayout() {
               {/* Button 3: Code */}
               <button
                 onClick={() => { setInputValue("Write a python script for"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+                className="flex flex-col items-center justify-center p-4 bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--btn-primary-text)] rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
               >
                 <Code2Icon className="h-8 w-8" />
                 <span className="text-sm font-medium">Code</span>
@@ -488,7 +488,7 @@ export default function ChatLayout() {
               {/* Button 4: Learn */}
               <button
                 onClick={() => { setInputValue("Explain the concept of"); textareaRef.current?.focus(); }}
-                className="flex flex-col items-center justify-center p-4 bg-surface-1 text-text-secondary hover:bg-accent-primary hover:text-text-primary rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+                className="flex flex-col items-center justify-center p-4 bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--btn-primary-text)] rounded-lg transition-colors duration-150 space-y-2 h-32 sm:h-36 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-0)]"
               >
                 <BookOpenCheckIcon className="h-8 w-8" />
                 <span className="text-sm font-medium">Learn</span>
@@ -497,17 +497,17 @@ export default function ChatLayout() {
 
             {/* Suggested Prompts */}
             <div className="space-y-3 max-w-md w-full">
-              <h3 className="text-lg font-medium text-text-secondary mb-3">Or try these:</h3>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How fast is light?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+              <h3 className="text-lg font-medium text-[var(--text-secondary)] mb-3">Or try these:</h3>
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How fast is light?"); textareaRef.current?.focus(); }} className="block text-[var(--accent-primary)] hover:underline">
                 How fast is light?
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Are wormholes real?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Are wormholes real?"); textareaRef.current?.focus(); }} className="block text-[var(--accent-primary)] hover:underline">
                 Are wormholes real?
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How many Rs are in the word \"Mississippi\"?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("How many Rs are in the word \"Mississippi\"?"); textareaRef.current?.focus(); }} className="block text-[var(--accent-primary)] hover:underline">
                 How many Ss are in the word "Mississippi"?
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Is work-life balance a myth?"); textareaRef.current?.focus(); }} className="block text-accent-primary hover:underline">
+              <a href="#" onClick={(e) => { e.preventDefault(); setInputValue("Is work-life balance a myth?"); textareaRef.current?.focus(); }} className="block text-[var(--accent-primary)] hover:underline">
                 Is work-life balance a myth?
               </a>
             </div>

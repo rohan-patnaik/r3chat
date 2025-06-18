@@ -8,12 +8,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-accent-primary text-[var(--btn-primary-text)] shadow hover:bg-accent-hover", // Use CSS var for text
-        destructive: "bg-error text-white shadow-sm hover:brightness-90",
-        outline: "border border-subtle bg-transparent shadow-sm hover:bg-surface-2 hover:text-primary",
-        secondary: "bg-surface-2 text-primary shadow-sm hover:bg-surface-1",
-        ghost: "hover:bg-surface-2 hover:text-primary",
-        link: "text-accent-primary underline-offset-4 hover:underline",
+        default: "bg-[var(--accent-primary)] text-[var(--btn-primary-text)] shadow hover:bg-[var(--accent-hover)]",
+        destructive: "bg-[var(--danger-warning)] text-[var(--btn-primary-text)] shadow-sm hover:brightness-90",
+        outline: "border border-[var(--border-subtle)] bg-transparent shadow-sm hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]",
+        secondary: "bg-[var(--surface-2)] text-[var(--text-primary)] shadow-sm hover:bg-[var(--surface-1)]",
+        ghost: "hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]",
+        link: "text-[var(--accent-primary)] underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",

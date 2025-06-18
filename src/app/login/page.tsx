@@ -31,18 +31,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen surface-0 flex items-center justify-center p-1">
+    <div className="min-h-screen bg-[var(--surface-0)] flex items-center justify-center p-1">
       <div className="max-w-md w-full">
         <div className="text-center mb-2">
-          <h1 className="text-3xl font-bold text-primary mb-2">Welcome to R3Chat</h1>
-          <p className="text-secondary">Sign in to continue your conversations</p>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Welcome to R3Chat</h1>
+          <p className="text-[var(--text-secondary)]">Sign in to continue your conversations</p>
         </div>
 
-        <div className="surface-1 border border-subtle p-6 rounded-lg">
+        <div className="bg-[var(--surface-1)] border border-[var(--border-subtle)] p-6 rounded-lg">
           <Button
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full bg-accent bg-orange-700 hover:bg-accent-hover text-white"
+            className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-[var(--btn-primary-text)]"
             size="lg"
           >
             {isLoading ? (
@@ -79,7 +79,7 @@ export default function LoginPage() {
 
         </div>
         <div className="mt-8 text-center">
-            <p className="text-xs text-secondary">
+            <p className="text-xs text-[var(--text-secondary)]">
               By continuing, you agree to our Terms of Service and Privacy Policy.
             </p>
           </div>
